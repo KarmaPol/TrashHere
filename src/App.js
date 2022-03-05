@@ -40,11 +40,11 @@ export default function App() {
 
     const [isReady, setLoading] = useState(false);
 
-    const [location, setLocation] = useState({marker: null});
+    const [location, setLocation] = useState(null);
     const [locas, setLocations] = useState({
-      1 : {id: '1', latitude : 37.4978, longitude: 127.07},
-      2 : {id: '2', latitude : 37.4968, longitude: 127.07},
-      3 : {id: '3', latitude : 37.4958, longitude: 127.07},})
+      '1' : {id: '1', latitude : 37.4978, longitude: 127.07},
+      '2' : {id: '2', latitude : 37.4968, longitude: 127.07},
+      '3' : {id: '3', latitude : 37.4958, longitude: 127.07},})
     const [currentLoc, setCurrentLoc] = useState(null);
 
     const getLoaction = async() => {
@@ -52,11 +52,19 @@ export default function App() {
             await Location.requestForegroundPermissionsAsync();
             let {coords} = await Location.getCurrentPositionAsync({});
             console.log(coords.latitude, coords.longitude);
-            setLocation(coords);
+            setCurrentLoc(coords);
         }
         catch (e) {
             console.log("오류발생,,");
         }
+    };
+
+    const _addLoc = () =>{
+      const ID = Date.now().toString();
+      const newLoc = {
+        [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
+      };
+      setLocations({...locas, ...newLoc});
     };
 
   return isReady?(
@@ -69,15 +77,15 @@ export default function App() {
             width: Dimensions.get('window').width,
             height: Dimensions.get('window').height,}} 
             initialRegion={{ 
-      latitude: location.latitude, 
-      longitude: location.longitude, 
+      latitude: currentLoc.latitude, 
+      longitude: currentLoc.longitude, 
       latitudeDelta: 0.015, longitudeDelta: 0.005 }}
       showsUserLocation = {true}
       showsMyLocationButton = {true}
-      onPress = {(e) => setCurrentLoc({ marker: e.nativeEvent.coordinate })}>
-    {currentLoc&&
+      onPress = {(e) => setLocation({ marker: e.nativeEvent.coordinate })}>
+    {location&&
         <Marker 
-          coordinate = {currentLoc.marker}
+          coordinate = {location.marker}
           image = {images.cusMark}
         />
     }
@@ -96,7 +104,7 @@ export default function App() {
     </MapView>
     </Container>
     <UIBOX>
-       <IconButton type = {images.plus} />
+       <IconButton type = {images.plus} onPressOut={_addLoc}/>
         <Text>Add</Text>
     </UIBOX>
     </ThemeProvider>
