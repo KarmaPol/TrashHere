@@ -7,8 +7,8 @@
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover",
+      "backgroundColor": "#99ffcc"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -22,7 +22,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#99ffcc"
+      },
+      "package": "com.kkh98.map",
+      "config" : {
+        "googleMaps" : {"apiKey" : "AIzaSyByTSUwMGFk-rf9H0q_ilRudQD29WEPob8"}
       }
     },
     "web": {
