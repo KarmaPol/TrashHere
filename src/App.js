@@ -9,8 +9,11 @@ import AppLoading from 'expo-app-loading';
 import { Dimensions } from 'react-native';
 import { Callout, Marker, ProviderPropType } from 'react-native-maps';
 import IconButton from './component/Imagebutton';
+import 'react-native-gesture-handler';
 import { images } from './component/Image';
-
+// import * as firebase from 'firebase/app';
+// import { getDatabase } from "firebase/database";
+// import { getDatabase, ref } from 'firebase/database';
 
 const Container = styled.View`
     flex: 13;
@@ -34,7 +37,20 @@ const Text = styled.Text`
   font-weight : bold;
 `;
 
+const firebaseConfig = {
+  apiKey: "AIzaSyAAziApy6slnzkT5rZHXJUmB8DTN9cRlSw",
+  authDomain: "tcfmap-c127c.firebaseapp.com",
+  databaseURL: "https://tcfmap-c127c-default-rtdb.firebaseio.com",
+  projectId: "tcfmap-c127c",
+  storageBucket: "tcfmap-c127c.appspot.com",
+  messagingSenderId: "1085900420280",
+  appId: "1:1085900420280:web:69253dce4c9ea7c58ab04d",
+  measurementId: "G-SSYM3EYH26"
+};
 
+// const app = initializeApp(firebaseConfig);
+
+// const database = getDatabase(app);
 
 export default function App() {
 
