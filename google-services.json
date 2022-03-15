@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1085900420280",
+    "project_id": "tcfmap-c127c",
+    "storage_bucket": "tcfmap-c127c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085900420280:android:c11d242ffd0abdb98ab04d",
+        "android_client_info": {
+          "package_name": "com.kkh98.map"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1085900420280-9b8cgd9s09rhkn93a75chl4uvfsj1b2b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kkh98.map",
+            "certificate_hash": "6c154ecd099b3b6d6e00d2cf63e83bf322bfd7c4"
+          }
+        },
+        {
+          "client_id": "1085900420280-0q86gl6c4biivfok8jornpqrbd7fmr27.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOcJw8r-X_bhx8miMPw9zaAPoHnVb8k_Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1085900420280-0q86gl6c4biivfok8jornpqrbd7fmr27.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

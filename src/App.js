@@ -11,12 +11,26 @@ import { Callout, Marker, ProviderPropType } from 'react-native-maps';
 import IconButton from './component/Imagebutton';
 import 'react-native-gesture-handler';
 import { images } from './component/Image';
-// import * as firebase from 'firebase/app';
-// import { getDatabase } from "firebase/database";
-// import { getDatabase, ref } from 'firebase/database';
+import { getDatabase, ref, onValue, set} from 'firebase/database';
+import { initializeApp } from "firebase/app";
+import { LogBox } from 'react-native';
+
+LogBox.ignoreLogs(['Setting a timer']);
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAAziApy6slnzkT5rZHXJUmB8DTN9cRlSw",
+  authDomain: "tcfmap-c127c.firebaseapp.com",
+  databaseURL: "https://tcfmap-c127c-default-rtdb.firebaseio.com",
+  projectId: "tcfmap-c127c",
+  storageBucket: "tcfmap-c127c.appspot.com",
+  messagingSenderId: "1085900420280",
+  appId: "1:1085900420280:web:69253dce4c9ea7c58ab04d",
+  measurementId: "G-SSYM3EYH26"
+};
+
 
 const Container = styled.View`
-    flex: 13;
+    flex: 13; 
     background-color: ${({theme})=> theme.background};
     align-items: center;
     justify-content: flex-start;
@@ -37,30 +51,12 @@ const Text = styled.Text`
   font-weight : bold;
 `;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAAziApy6slnzkT5rZHXJUmB8DTN9cRlSw",
-  authDomain: "tcfmap-c127c.firebaseapp.com",
-  databaseURL: "https://tcfmap-c127c-default-rtdb.firebaseio.com",
-  projectId: "tcfmap-c127c",
-  storageBucket: "tcfmap-c127c.appspot.com",
-  messagingSenderId: "1085900420280",
-  appId: "1:1085900420280:web:69253dce4c9ea7c58ab04d",
-  measurementId: "G-SSYM3EYH26"
-};
-
-// const app = initializeApp(firebaseConfig);
-
-// const database = getDatabase(app);
-
 export default function App() {
 
     const [isReady, setLoading] = useState(false);
 
     const [location, setLocation] = useState(null);
-    const [locas, setLocations] = useState({
-      '1' : {id: '1', latitude : 37.4978, longitude: 127.07},
-      '2' : {id: '2', latitude : 37.4968, longitude: 127.07},
-      '3' : {id: '3', latitude : 37.4958, longitude: 127.07},})
+    const [locas, setLocations] = useState({})
     const [currentLoc, setCurrentLoc] = useState(null);
 
     const getLoaction = async() => {
@@ -77,11 +73,32 @@ export default function App() {
 
     const _addLoc = () =>{
       const ID = Date.now().toString();
+      console.log(ID);
       const newLoc = {
         [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
       };
       setLocations({...locas, ...newLoc});
+      storeData();
     };
+
+    const storeData = () => {
+      initializeApp(firebaseConfig);
+      const db = getDatabase();
+
+      const ID = Date.now().toString();
+      console.log(ID);
+      const newLoc = {
+        [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
+      };
+      
+      console.log(newLoc);
+
+      const reference = ref(db, 'locations/' + ID);
+      set(reference, {
+        latitude:location.marker.latitude, longitude:location.marker.longitude
+      });
+      setLocations({...locas, ...newLoc});
+    }
 
   return isReady?(
     <ThemeProvider theme = {theme}>
@@ -99,12 +116,13 @@ export default function App() {
       showsUserLocation = {true}
       showsMyLocationButton = {true}
       onPress = {(e) => setLocation({ marker: e.nativeEvent.coordinate })}>
-    {location&&
+    {location&& 
         <Marker 
           coordinate = {location.marker}
           image = {images.cusMark}
         />
     }
+    {/* {location&& console.log(location.id)} */}
     {
       Object.values(locas).map(
         a => <Marker 
@@ -120,7 +138,7 @@ export default function App() {
     </MapView>
     </Container>
     <UIBOX>
-       <IconButton type = {images.plus} onPressOut={_addLoc}/>
+       <IconButton type = {images.plus} onPressOut={storeData}/>
         <Text>Add</Text>
     </UIBOX>
     </ThemeProvider>
