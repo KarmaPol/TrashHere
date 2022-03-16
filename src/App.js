@@ -11,7 +11,7 @@ import { Callout, Marker, ProviderPropType } from 'react-native-maps';
 import IconButton from './component/Imagebutton';
 import 'react-native-gesture-handler';
 import { images } from './component/Image';
-import { getDatabase, ref, onValue, set} from 'firebase/database';
+import { getDatabase, ref, onValue, set, get, child} from 'firebase/database';
 import { initializeApp } from "firebase/app";
 import { LogBox } from 'react-native';
 
@@ -28,6 +28,8 @@ const firebaseConfig = {
   measurementId: "G-SSYM3EYH26"
 };
 
+initializeApp(firebaseConfig);
+const db = getDatabase();
 
 const Container = styled.View`
     flex: 13; 
@@ -71,34 +73,46 @@ export default function App() {
         }
     };
 
-    const _addLoc = () =>{
-      const ID = Date.now().toString();
-      console.log(ID);
-      const newLoc = {
-        [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
-      };
-      setLocations({...locas, ...newLoc});
-      storeData();
-    };
+    // const _addLoc = () =>{
+    //   const ID = Date.now().toString();
+    //   console.log(ID);
+    //   const newLoc = {
+    //     [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
+    //   };
+    //   setLocations({...locas, ...newLoc});
+    //   storeData();
+    // };
 
     const storeData = () => {
-      initializeApp(firebaseConfig);
-      const db = getDatabase();
 
       const ID = Date.now().toString();
       console.log(ID);
-      const newLoc = {
-        [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
-      };
-      
-      console.log(newLoc);
 
       const reference = ref(db, 'locations/' + ID);
       set(reference, {
-        latitude:location.marker.latitude, longitude:location.marker.longitude
+        id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 0,
       });
-      setLocations({...locas, ...newLoc});
     }
+
+    const loadData = () => {
+      const readRef = ref(db, 'locations');
+      const temp = [];
+      onValue(readRef, (snapshot) => {
+        
+        snapshot.forEach((child) => {
+          temp.push({
+          id : child.key,
+          latitude : child.val().latitude,
+          longitude : child.val().longitude,
+          weight : child.val().weight,
+        });
+        });
+        console.log(temp);
+        setLocations(temp);
+      });
+    }
+
+    useEffect(loadData, []);
 
   return isReady?(
     <ThemeProvider theme = {theme}>
