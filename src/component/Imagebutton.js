@@ -14,7 +14,7 @@ const Icon = styled.Image`
 const IconButton = ({type, onPressOut}) => {
     return (
         <TouchableOpacity onPressOut ={onPressOut}>
-            <Icon source = {type}></Icon>
+            <Icon source = {type} onPressOut = {()=> {}}></Icon>
         </TouchableOpacity>
     );
 };

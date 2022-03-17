@@ -14,6 +14,7 @@ import { images } from './component/Image';
 import { getDatabase, ref, onValue, set, get, child} from 'firebase/database';
 import { initializeApp } from "firebase/app";
 import { LogBox } from 'react-native';
+import { CusCallout } from './component/CustomCallout';
 
 LogBox.ignoreLogs(['Setting a timer']);
 
@@ -60,6 +61,7 @@ export default function App() {
     const [location, setLocation] = useState(null);
     const [locas, setLocations] = useState({})
     const [currentLoc, setCurrentLoc] = useState(null);
+    const [currentMarker, setCurrentMarker] = useState(null);
 
     const getLoaction = async() => {
         try {
@@ -73,25 +75,16 @@ export default function App() {
         }
     };
 
-    // const _addLoc = () =>{
-    //   const ID = Date.now().toString();
-    //   console.log(ID);
-    //   const newLoc = {
-    //     [ID] : {id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude},
-    //   };
-    //   setLocations({...locas, ...newLoc});
-    //   storeData();
-    // };
-
     const storeData = () => {
-
+      if(location){
       const ID = Date.now().toString();
       console.log(ID);
-
+      
       const reference = ref(db, 'locations/' + ID);
       set(reference, {
         id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 0,
       });
+      }
     }
 
     const loadData = () => {
@@ -110,6 +103,13 @@ export default function App() {
         console.log(temp);
         setLocations(temp);
       });
+    }
+
+    const delData = () => {
+      if(currentMarker){
+      const reference = ref(db, 'locations/' + currentMarker);
+      set(reference, null);
+      }
     }
 
     useEffect(loadData, []);
@@ -146,9 +146,14 @@ export default function App() {
           longitude : a.longitude,
         }}
         image = {images.cusMark}
-        />
+        onPress = {() => {setCurrentMarker(a.id)}}>
+        <Callout tooltip onPress = {delData}>
+          <CusCallout />
+        </Callout>
+        </Marker>
       )
     }
+    {currentMarker&&console.log("select : " + currentMarker)}
     </MapView>
     </Container>
     <UIBOX>
