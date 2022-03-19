@@ -6,15 +6,18 @@ import {images} from './Image';
 
 const Icon = styled.Image`
     tint-color : ${({theme}) => theme.main};
-    width : 40px;
-    height : 40px;
-    margin : 1px;
+    height : ${props => props.parentHeight};
+    width : ${props => props.parentHeight};
+    margin : ${props => props.margin}px;
 `;
 
-const IconButton = ({type, onPressOut}) => {
+const IconButton = ({type, onPressOut ,parentHeight}) => {
+    
+    const iconSize = parentHeight*0.7;
+    const marginSize = parentHeight*0.05;
     return (
         <TouchableOpacity onPressOut ={onPressOut}>
-            <Icon source = {type} onPressOut = {()=> {}}></Icon>
+            <Icon source = {type} onPressOut = {()=> {}} parentHeight = {iconSize} margin = {marginSize}></Icon>
         </TouchableOpacity>
     );
 };

@@ -33,7 +33,7 @@ initializeApp(firebaseConfig);
 const db = getDatabase();
 
 const Container = styled.View`
-    flex: 13; 
+    flex: 10; 
     background-color: ${({theme})=> theme.background};
     align-items: center;
     justify-content: flex-start;
@@ -45,6 +45,8 @@ const UIBOX = styled.View`
     justify-content: flex-start;
     flex-direction: column;
     text-align:center;
+    border-top-left-radius : 30px;
+    border-top-right-radius : 30px;
 `;
 
 const Text = styled.Text`
@@ -57,11 +59,17 @@ const Text = styled.Text`
 export default function App() {
 
     const [isReady, setLoading] = useState(false);
-
+    const [parentHeight, setParentHeight] = useState(0);
     const [location, setLocation] = useState(null);
     const [locas, setLocations] = useState({})
     const [currentLoc, setCurrentLoc] = useState(null);
     const [currentMarker, setCurrentMarker] = useState(null);
+    const [addMode, setAddMode] = useState(false);
+
+    const onLayout = event => {
+      const {height} = event.nativeEvent.layout;
+      setParentHeight(height);
+    };
 
     const getLoaction = async() => {
         try {
@@ -85,7 +93,9 @@ export default function App() {
         id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 0,
       });
       }
-    }
+      setAddMode(false);
+      setLocation(null);
+    };
 
     const loadData = () => {
       const readRef = ref(db, 'locations');
@@ -103,14 +113,14 @@ export default function App() {
         console.log(temp);
         setLocations(temp);
       });
-    }
+    };
 
     const delData = () => {
       if(currentMarker){
       const reference = ref(db, 'locations/' + currentMarker);
       set(reference, null);
       }
-    }
+    };
 
     useEffect(loadData, []);
 
@@ -130,13 +140,12 @@ export default function App() {
       showsUserLocation = {true}
       showsMyLocationButton = {true}
       onPress = {(e) => setLocation({ marker: e.nativeEvent.coordinate })}>
-    {location&& 
+    {location&& addMode&&
         <Marker 
           coordinate = {location.marker}
           image = {images.cusMark}
         />
     }
-    {/* {location&& console.log(location.id)} */}
     {
       Object.values(locas).map(
         a => <Marker 
@@ -156,9 +165,17 @@ export default function App() {
     {currentMarker&&console.log("select : " + currentMarker)}
     </MapView>
     </Container>
-    <UIBOX>
-       <IconButton type = {images.plus} onPressOut={storeData}/>
-        <Text>Add</Text>
+    <UIBOX onLayout = {onLayout}>
+       {(!addMode&&
+       <IconButton type = {images.plus} onPressOut={() => setAddMode(true)} parentHeight = {parentHeight} />
+       )
+       ||
+       (addMode&&
+       <IconButton type = {images.done} onPressOut={storeData} parentHeight = {parentHeight} />)
+       }
+        {(!addMode&&<Text>Add</Text>) || addMode&&<Text>Done</Text>}
+        {console.log("높이 : " + parentHeight)}
+        {console.log("addmode : " + addMode)}
     </UIBOX>
     </ThemeProvider>
   ) : (
