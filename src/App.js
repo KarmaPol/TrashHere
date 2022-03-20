@@ -15,6 +15,7 @@ import { getDatabase, ref, onValue, set, get, child} from 'firebase/database';
 import { initializeApp } from "firebase/app";
 import { LogBox } from 'react-native';
 import { CusCallout } from './component/CustomCallout';
+import {TextImage} from './component/Imagebutton';
 
 LogBox.ignoreLogs(['Setting a timer']);
 
@@ -119,6 +120,8 @@ export default function App() {
       if(currentMarker){
       const reference = ref(db, 'locations/' + currentMarker);
       set(reference, null);
+
+      loadData();
       }
     };
 
@@ -139,7 +142,7 @@ export default function App() {
       latitudeDelta: 0.015, longitudeDelta: 0.005 }}
       showsUserLocation = {true}
       showsMyLocationButton = {true}
-      onPress = {(e) => setLocation({ marker: e.nativeEvent.coordinate })}>
+      onPress = {(e) => {if(addMode){setLocation({ marker: e.nativeEvent.coordinate })}}}>
     {location&& addMode&&
         <Marker 
           coordinate = {location.marker}
@@ -148,7 +151,8 @@ export default function App() {
     }
     {
       Object.values(locas).map(
-        a => <Marker 
+        a => 
+        !addMode&&<Marker 
           key = {a.id}
           coordinate={{
           latitude : a.latitude,
@@ -159,11 +163,24 @@ export default function App() {
         <Callout tooltip onPress = {delData}>
           <CusCallout />
         </Callout>
-        </Marker>
-      )
+        </Marker>)
+    }
+    {
+      Object.values(locas).map(
+        a => 
+        addMode&&<Marker 
+          key = {a.id}
+          coordinate={{
+          latitude : a.latitude,
+          longitude : a.longitude,
+        }}
+        image = {images.grayMark}
+        onPress = {() => {setCurrentMarker(a.id)}}>
+        </Marker>)
     }
     {currentMarker&&console.log("select : " + currentMarker)}
     </MapView>
+    {console.log(locas)}
     </Container>
     <UIBOX onLayout = {onLayout}>
        {(!addMode&&
@@ -173,9 +190,8 @@ export default function App() {
        (addMode&&
        <IconButton type = {images.done} onPressOut={storeData} parentHeight = {parentHeight} />)
        }
-        {(!addMode&&<Text>Add</Text>) || addMode&&<Text>Done</Text>}
-        {console.log("높이 : " + parentHeight)}
-        {console.log("addmode : " + addMode)}
+        {(!addMode&&<TextImage source = {images.addText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>) || 
+        (addMode&&<TextImage source = {images.doneText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>)}
     </UIBOX>
     </ThemeProvider>
   ) : (

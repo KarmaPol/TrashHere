@@ -28,7 +28,6 @@ export const CusCallout = () => {
     return (
         <Container>
             <Text>Delete?</Text>
-            {/* <Image style = {styles.Icon} source = {require('../assets/done.png')} /> */}
         </Container>
     );
 } 

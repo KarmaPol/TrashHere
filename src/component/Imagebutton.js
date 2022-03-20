@@ -5,11 +5,16 @@ import PropTypes from 'prop-types';
 import {images} from './Image';
 
 const Icon = styled.Image`
-    tint-color : ${({theme}) => theme.main};
     height : ${props => props.parentHeight};
     width : ${props => props.parentHeight};
     margin : ${props => props.margin}px;
 `;
+
+export const TextImage = styled.Image`
+    height : ${props => props.parentHeight};
+    margin : ${props => props.margin}px;
+`;
+
 
 const IconButton = ({type, onPressOut ,parentHeight}) => {
     
