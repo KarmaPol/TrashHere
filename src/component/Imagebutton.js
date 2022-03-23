@@ -15,7 +15,6 @@ export const TextImage = styled.Image`
     margin : ${props => props.margin}px;
 `;
 
-
 const IconButton = ({type, onPressOut ,parentHeight}) => {
     
     const iconSize = parentHeight*0.7;
@@ -26,6 +25,7 @@ const IconButton = ({type, onPressOut ,parentHeight}) => {
         </TouchableOpacity>
     );
 };
+
 
 IconButton.propTypes = {
     type: PropTypes.oneOf(Object.values(images)).isRequired,
