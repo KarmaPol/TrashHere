@@ -130,6 +130,7 @@ export default function App() {
       set(reference, null);
 
       loadData();
+      setCurrentMarker(null);
       }
     };
 
@@ -183,9 +184,11 @@ export default function App() {
         </Callout>
         {
         getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
-          {latitude : a.latitude, longitude : a.longitude}) < 50 ?
-          (activatedCan == null ? throwSetting(a.id) : null) : null
+          {latitude : a.latitude, longitude : a.longitude}) < 200 ?
+          (activatedCan == null ? throwSetting(a.id) : null) : (activatedCan == a.id ? throwReset() : null)
         }
+        {console.log(getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
+            {latitude : a.latitude, longitude : a.longitude}))}
         {console.log(throwPossible)}
         </Marker>)
     }
