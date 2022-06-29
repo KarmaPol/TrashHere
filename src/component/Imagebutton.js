@@ -26,7 +26,6 @@ const IconButton = ({type, onPressOut ,parentHeight}) => {
     );
 };
 
-
 IconButton.propTypes = {
     type: PropTypes.oneOf(Object.values(images)).isRequired,
 }

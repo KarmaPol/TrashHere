@@ -10,6 +10,9 @@ export const ScoreBoard = styled.View`
     border-color: #C4C4C4 ;
     border-width : 1px;
     border-radius : 20px;
+    flex-direction : row;
     justify-content : flex-start;
-    align-items : flex-end;
+    align-items : center;
+    position : absolute;
+    right : ${props => props.windowWidth};
 `

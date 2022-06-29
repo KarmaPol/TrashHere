@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { StatusBar } from 'react-native';
 import { theme } from './theme';
-import MapView from 'react-native-maps';
+import MapView, { Overlay } from 'react-native-maps';
 import styled, {ThemeProvider} from 'styled-components/native';
 import * as Location from "expo-location";
 import AppLoading from 'expo-app-loading';
@@ -10,13 +10,14 @@ import { Callout, Marker, ProviderPropType } from 'react-native-maps';
 import IconButton from './component/Imagebutton';
 import 'react-native-gesture-handler';
 import { images } from './component/Image';
-import { getDatabase, ref, onValue, set, get, child} from 'firebase/database';
+import { getDatabase, ref, onValue, set, update } from 'firebase/database';
 import { initializeApp } from "firebase/app";
 import { LogBox } from 'react-native';
 import { CusCallout } from './component/CustomCallout';
 import {TextImage} from './component/Imagebutton';
 import {ScoreBoard} from './component/UiComponents';
 import { getDistance} from 'geolib';
+import { TrashButton } from './component/TrashButton';
 
 LogBox.ignoreLogs(['Setting a timer']);
 
@@ -38,13 +39,14 @@ const Container = styled.View`
     flex: 10; 
     background-color: ${({theme})=> theme.background};
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+    flex-direction: column;
 `;
 const UIBOX = styled.View`
     flex: 1;
     background-color: ${({theme})=> theme.background};
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     flex-direction: row;
     border-top-left-radius : 30px;
     border-top-right-radius : 30px;
@@ -54,7 +56,7 @@ const IconBoX = styled.View`
   flex-direction : column;
   align-items: center;
   justify-content : center;
-  margin-left : 43px;
+  position : absolute;
 `;
 
 const Text = styled.Text`
@@ -62,6 +64,9 @@ const Text = styled.Text`
   text-align: center;
   color:${({theme}) => theme.text};
 `;
+
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
 
 export default function App() {
 
@@ -72,8 +77,10 @@ export default function App() {
     const [currentLoc, setCurrentLoc] = useState(null); //현재 사용자 위치
     const [currentMarker, setCurrentMarker] = useState(null); //선택한 마커의 정보
     const [addMode, setAddMode] = useState(false); //add 모드인지?
+    const [throwMode, setThrowMode] = useState(true);
     const [throwPossible, setThrowPossible] = useState(false); //사용자가 현재 버리기 행동을 할수 있나? = 현재 활성화된 쓰레기통이 있나?
     const [activatedCan, setActivatedCan] = useState(null); //활성화된 쓰레기통의 정보
+    const [playerScore, setScore] = useState(0);
  
     const onLayout = event => {
       const {height} = event.nativeEvent.layout;
@@ -86,6 +93,7 @@ export default function App() {
             let {coords} = await Location.getCurrentPositionAsync({});
             console.log(coords.latitude, coords.longitude);
             setCurrentLoc(coords);
+            getFonts;
         }
         catch (e) {
             console.log("오류발생,,");
@@ -99,18 +107,21 @@ export default function App() {
       
       const reference = ref(db, 'locations/' + ID);
       set(reference, {
-        id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 0,
+        id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 10,
       });
       }
       setAddMode(false);
-      setLocation(null);
+      setThrowMode(true); //for test
+      loadData;
     };
 
     const loadData = () => {
+
       const readRef = ref(db, 'locations');
       const temp = [];
+      
       onValue(readRef, (snapshot) => {
-        
+        temp.length = 0;
         snapshot.forEach((child) => {
           temp.push({
           id : child.val().id,
@@ -119,7 +130,6 @@ export default function App() {
           weight : child.val().weight,
         });
         });
-        // console.log(temp);
         setLocations(temp);
       });
     };
@@ -129,20 +139,41 @@ export default function App() {
       const reference = ref(db, 'locations/' + currentMarker);
       set(reference, null);
 
-      loadData();
+      loadData;
       setCurrentMarker(null);
       }
     };
 
-    const throwSetting = (id) => {
-      setActivatedCan(id);
+    const updateData = (id, k, v) => {
+      if(v < 0){
+        delData
+      }
+      update(ref(db, '/locations/' + id), {
+        weight : v,
+      })
+    }
+
+    const throwTrash = () => {
+      console.log("trash Throw" + activatedCan.id + ":" + activatedCan.weight);
+      updateData(activatedCan.id, "weight", getRandom(1, 100));
+      loadData;
+      throwReset;
+      console.log("초기화" + activatedCan.id + " : " + activatedCan.weight); //변경된 정보 반영이 안됨
+      setThrowMode(false)
+    }
+
+    const throwSetting = (trashCan) => {
+      setActivatedCan({id : trashCan.id, weight : trashCan.weight});
+      console.log(trashCan.id + " : " + trashCan.weight);
       setThrowPossible(true);
     }
 
     const throwReset = () => {
-      setActivatedCan(null);
+      setActivatedCan({});
       setThrowPossible(false);
     }
+
+    const getRandom = (min, max) => Math.random() * (max - min) + min;
 
     useEffect(loadData, []);
 
@@ -152,13 +183,17 @@ export default function App() {
     <StatusBar
     barStyle='dark-content'
     backgroundColor={theme.background}/>
+    {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} onPressOut = {throwTrash} windowWidth = {windowWidth} windowHeight ={windowHeight}/>}
+    {/* {throwPossible&&<IconButton type ={images.trashClick} onPressOut = {() => console.log("11111")} parentHeight = {parentHeight}/>} */}
     <MapView style={{
             width: Dimensions.get('window').width,
-            height: Dimensions.get('window').height,}} 
+            height: Dimensions.get('window').height,
+            zIndex : -1,}} 
             initialRegion={{ 
-      latitude: currentLoc.latitude, 
-      longitude: currentLoc.longitude, 
-      latitudeDelta: 0.015, longitudeDelta: 0.005 }}
+              latitude: currentLoc.latitude, 
+              longitude: currentLoc.longitude, 
+              latitudeDelta: 0.015, longitudeDelta: 0.005 }
+            }
       showsUserLocation = {true}
       showsMyLocationButton = {true}
       onPress = {(e) => {if(addMode){setLocation({ marker: e.nativeEvent.coordinate })}}}>
@@ -168,10 +203,10 @@ export default function App() {
           image = {images.cusMark}
         />
     }
-    {
+    { !addMode&&
       Object.values(locas).map(
         a => 
-        !addMode&&<Marker 
+        <Marker 
           key = {a.id}
           coordinate={{
           latitude : a.latitude,
@@ -184,18 +219,15 @@ export default function App() {
         </Callout>
         {
         getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
-          {latitude : a.latitude, longitude : a.longitude}) < 200 ?
-          (activatedCan == null ? throwSetting(a.id) : null) : (activatedCan == a.id ? throwReset() : null)
+          {latitude : a.latitude, longitude : a.longitude}) < 100 ?
+          (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null)
         }
-        {console.log(getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
-            {latitude : a.latitude, longitude : a.longitude}))}
-        {console.log(throwPossible)}
         </Marker>)
     }
-    {
+    { addMode&&
       Object.values(locas).map(
         a => 
-        addMode&&<Marker 
+        <Marker 
           key = {a.id}
           coordinate={{
           latitude : a.latitude,
@@ -205,14 +237,16 @@ export default function App() {
         onPress = {() => {setCurrentMarker(a.id)}}>
         </Marker>)
     }
-    {currentMarker&&console.log("select : " + currentMarker)}
     </MapView>
+    { console.log("locas 출력 : ")}
+    { console.log(locas)}
     </Container>
     <UIBOX onLayout = {onLayout}>
-      <ScoreBoard>
-        <Text>125</Text>
+      <ScoreBoard windowWidth = {windowWidth - 120}>
+        {/* <TextImage source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.3*parentHeight} margin = {0.01*parentHeight}/> */}
+        <Text>{playerScore}</Text>
       </ScoreBoard>
-      <IconBoX>
+      <IconBoX >
        {(!addMode&&
        <IconButton type = {images.plus} onPressOut={() => setAddMode(true)} parentHeight = {parentHeight} />
        )

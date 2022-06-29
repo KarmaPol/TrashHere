@@ -5,29 +5,54 @@ import {images} from './Image';
 import { Image, StyleSheet} from 'react-native';
 
 const Container = styled.View`
+    flex-direction: row;
     justify-content:center;
     align-items:center;
-    background-color: #111111;
-    border-radius : 5px;
+    background-color: #ffffff;
+    border-radius : 10px;
     opacity : 0.7;
+    margin : 3px;
+    padding : 3px;
 `;
 
-const Text = styled.Text`
+const Button = styled.View`
+    border-color : #C4C4C4;
+    border-width : 1px;
+    justify-content:center;
+    align-items:center;
+    background-color: #ffffff;
+    border-radius : 10px;
+    opacity : 1;
+    margin : 3px;
+`
+
+const Text1 = styled.Text`
     font-size : 20px;
     color : red;
 `;
 
-const styles = StyleSheet.create({
-    Icon : {
-        width : 40,
-        height : 40,
-    },
-})
+const Text2 = styled.Text`
+    font-size : 20px;
+    color : green;
+`;
+
+const Text3 = styled.Text`
+    font-size : 20px;
+    color : blue;
+`;
 
 export const CusCallout = () => {
     return (
         <Container>
-            <Text>Delete?</Text>
+            <Button>
+                <Text1>Delete</Text1>
+            </Button>
+            <Button>
+                <Text2>Like</Text2>
+            </Button>
+            <Button>
+                <Text3>Dislike</Text3>
+            </Button>
         </Container>
     );
 } 
