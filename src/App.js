@@ -39,6 +39,7 @@ const Container = styled.View`
     align-items: center;
     justify-content: center;
     flex-direction: column;
+    z-index : 10;
 `;
 
 const windowWidth = Dimensions.get('window').width;
@@ -155,7 +156,7 @@ export default function App() {
 
 {/* 버리기 버튼 출력 */}
       {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} windowWidth = {windowWidth} windowHeight ={windowHeight}/>}
-      
+
 {/* 맵 출력 */}
       <MapView style={{
               width: Dimensions.get('window').width,

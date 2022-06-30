@@ -3,22 +3,26 @@ import { TouchableOpacity } from "react-native";
 import styled from "styled-components/native";
 import { Animated } from "react-native";
 
+const Button = styled.TouchableOpacity`
+    height : ${props => props.width}px;
+    width : ${props => props.width}px;
+    top : 75%;
+    left : ${props => props.left}px;
+    position : absolute;
+    z-index : 20;
+`
+
 const Icon = styled.Image`
     height : ${props => props.width}px;
     width : ${props => props.width}px;
-    top : ${props => props.top}px;
-    left : ${props => props.left}px;
-    z-index : 10;
-    position : absolute;
 `;
-
-// const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export const TrashButton = ({type, windowWidth, windowHeight}) => {
     return (
-        <TouchableOpacity onPressout = {()=> {console.log("test11")}}>
-            <Icon source = {type} top = {windowHeight*0.75} left = {windowWidth*-0.125} width = {windowWidth*0.25}/>
-        </TouchableOpacity>
+        <Button top = {windowHeight*0.75} left = {windowWidth*0.5 - windowWidth*0.15} 
+        width = {windowWidth*0.3} onPressOut = {()=> {console.log("test12455")}}>
+            <Icon source = {type} width = {windowWidth*0.3}/>
+        </Button>
     );
 };
 

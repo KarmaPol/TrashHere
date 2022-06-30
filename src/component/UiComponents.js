@@ -12,6 +12,7 @@ const UIBOX = styled.View`
     flex-direction: row;
     border-top-left-radius : 30px;
     border-top-right-radius : 30px;
+    z-index : 15;
 `;
 
 const ScoreBoard = styled.View`
