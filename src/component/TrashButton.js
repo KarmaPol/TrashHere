@@ -17,10 +17,10 @@ const Icon = styled.Image`
     width : ${props => props.width}px;
 `;
 
-export const TrashButton = ({type, windowWidth, windowHeight}) => {
+export const TrashButton = ({type, windowWidth, windowHeight, throwTrash}) => {
     return (
         <Button top = {windowHeight*0.75} left = {windowWidth*0.5 - windowWidth*0.15} 
-        width = {windowWidth*0.3} onPressOut = {()=> {console.log("test12455")}}>
+        width = {windowWidth*0.3} onPressOut = {()=> {throwTrash()}}>
             <Icon source = {type} width = {windowWidth*0.3}/>
         </Button>
     );

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { StatusBar } from 'react-native';
 import { theme } from './theme';
-import MapView, { Overlay } from 'react-native-maps';
+import MapView from 'react-native-maps';
 import styled, {ThemeProvider} from 'styled-components/native';
 import * as Location from "expo-location";
 import AppLoading from 'expo-app-loading';
@@ -83,6 +83,7 @@ export default function App() {
       setAddMode(false);
       setThrowMode(true); //for test
       loadData;
+      setLocation(null);
     };
 
     const loadData = () => {
@@ -113,37 +114,40 @@ export default function App() {
       setCurrentMarker(null);
       }
     };
+// weight만 업데이트 함수
+    const updateData = (id, v) => { 
+      
+      const reference = ref(db, 'locations/' + id);
+      let tempWeight = 0;
+      
+      onValue(reference, (snapshot) => {
+        tempWeight = snapshot.val().weight;
+      });
 
-    const updateData = (id, k, v) => {
-      if(v < 0){
+      tempWeight = Number(tempWeight) + v;
+      if(tempWeight < 0){
         delData
       }
-      update(ref(db, '/locations/' + id), {
-        weight : v,
-      })
+      else {
+        update(ref(db, '/locations/' + id), {
+          weight : tempWeight,
+        })
+      }
     }
 
+// 쓰레기 버리기 함수
     const throwTrash = () => {
-      console.log("trash Throw" + activatedCan.id + ":" + activatedCan.weight);
-      updateData(activatedCan.id, "weight", getRandom(1, 100));
+      console.log("trash Throw" + activatedCan.id );
+      updateData(activatedCan.id, 1);
       loadData;
-      throwReset;
-      console.log("초기화" + activatedCan.id + " : " + activatedCan.weight); //변경된 정보 반영이 안됨
+      throwSetting
       setThrowMode(false)
     }
 
     const throwSetting = (trashCan) => {
-      setActivatedCan({id : trashCan.id, weight : trashCan.weight});
-      console.log(trashCan.id + " : " + trashCan.weight);
+      setActivatedCan({id : trashCan.id});
       setThrowPossible(true);
     }
-
-    const throwReset = () => {
-      setActivatedCan({});
-      setThrowPossible(false);
-    }
-
-    const getRandom = (min, max) => Math.random() * (max - min) + min;
 
     useEffect(loadData, []);
 
@@ -155,7 +159,7 @@ export default function App() {
       backgroundColor={theme.background}/>
 
 {/* 버리기 버튼 출력 */}
-      {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} windowWidth = {windowWidth} windowHeight ={windowHeight}/>}
+      {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} windowWidth = {windowWidth} windowHeight ={windowHeight} throwTrash = {throwTrash}/>}
 
 {/* 맵 출력 */}
       <MapView style={{
