@@ -15,7 +15,7 @@ export const TextImage = styled.Image`
     margin : ${props => props.margin}px;
 `;
 
-const IconButton = ({type, onPressOut ,parentHeight}) => {
+export const IconButton = ({type, onPressOut ,parentHeight}) => {
     
     const iconSize = parentHeight*0.7;
     const marginSize = parentHeight*0.05;
@@ -29,5 +29,3 @@ const IconButton = ({type, onPressOut ,parentHeight}) => {
 IconButton.propTypes = {
     type: PropTypes.oneOf(Object.values(images)).isRequired,
 }
-
-export default IconButton;

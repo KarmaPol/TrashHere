@@ -7,17 +7,15 @@ import * as Location from "expo-location";
 import AppLoading from 'expo-app-loading';
 import { Dimensions } from 'react-native';
 import { Callout, Marker, ProviderPropType } from 'react-native-maps';
-import IconButton from './component/Imagebutton';
 import 'react-native-gesture-handler';
 import { images } from './component/Image';
 import { getDatabase, ref, onValue, set, update } from 'firebase/database';
 import { initializeApp } from "firebase/app";
 import { LogBox } from 'react-native';
 import { CusCallout } from './component/CustomCallout';
-import {TextImage} from './component/Imagebutton';
-import {ScoreBoard} from './component/UiComponents';
 import { getDistance} from 'geolib';
 import { TrashButton } from './component/TrashButton';
+import { UiComponents } from './component/UiComponents';
 
 LogBox.ignoreLogs(['Setting a timer']);
 
@@ -42,28 +40,6 @@ const Container = styled.View`
     justify-content: center;
     flex-direction: column;
 `;
-const UIBOX = styled.View`
-    flex: 1;
-    background-color: ${({theme})=> theme.background};
-    align-items: center;
-    justify-content: center;
-    flex-direction: row;
-    border-top-left-radius : 30px;
-    border-top-right-radius : 30px;
-`;
-
-const IconBoX = styled.View`
-  flex-direction : column;
-  align-items: center;
-  justify-content : center;
-  position : absolute;
-`;
-
-const Text = styled.Text`
-  font-size:15px;
-  text-align: center;
-  color:${({theme}) => theme.text};
-`;
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -71,7 +47,6 @@ const windowHeight = Dimensions.get('window').height;
 export default function App() {
 
     const [isReady, setLoading] = useState(false);
-    const [parentHeight, setParentHeight] = useState(0); //하단 uibox 높이
     const [location, setLocation] = useState(null); //add 화면에서 클릭한 좌표 
     const [locas, setLocations] = useState({}) //화면에 출력해줄 모든 마커들의 정보 
     const [currentLoc, setCurrentLoc] = useState(null); //현재 사용자 위치
@@ -81,11 +56,6 @@ export default function App() {
     const [throwPossible, setThrowPossible] = useState(false); //사용자가 현재 버리기 행동을 할수 있나? = 현재 활성화된 쓰레기통이 있나?
     const [activatedCan, setActivatedCan] = useState(null); //활성화된 쓰레기통의 정보
     const [playerScore, setScore] = useState(0);
- 
-    const onLayout = event => {
-      const {height} = event.nativeEvent.layout;
-      setParentHeight(height);
-    };
 
     const getLoaction = async() => {
         try {
@@ -93,7 +63,6 @@ export default function App() {
             let {coords} = await Location.getCurrentPositionAsync({});
             console.log(coords.latitude, coords.longitude);
             setCurrentLoc(coords);
-            getFonts;
         }
         catch (e) {
             console.log("오류발생,,");
@@ -179,91 +148,86 @@ export default function App() {
 
   return isReady?(
     <ThemeProvider theme = {theme}>
-    <Container>
-    <StatusBar
-    barStyle='dark-content'
-    backgroundColor={theme.background}/>
-    {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} onPressOut = {throwTrash} windowWidth = {windowWidth} windowHeight ={windowHeight}/>}
-    {/* {throwPossible&&<IconButton type ={images.trashClick} onPressOut = {() => console.log("11111")} parentHeight = {parentHeight}/>} */}
-    <MapView style={{
-            width: Dimensions.get('window').width,
-            height: Dimensions.get('window').height,
-            zIndex : -1,}} 
-            initialRegion={{ 
-              latitude: currentLoc.latitude, 
-              longitude: currentLoc.longitude, 
-              latitudeDelta: 0.015, longitudeDelta: 0.005 }
-            }
-      showsUserLocation = {true}
-      showsMyLocationButton = {true}
-      onPress = {(e) => {if(addMode){setLocation({ marker: e.nativeEvent.coordinate })}}}>
-    {location&& addMode&&
-        <Marker 
-          coordinate = {location.marker}
+      <Container>
+      <StatusBar
+      barStyle='dark-content'
+      backgroundColor={theme.background}/>
+
+{/* 버리기 버튼 출력 */}
+      {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} windowWidth = {windowWidth} windowHeight ={windowHeight}/>}
+      
+{/* 맵 출력 */}
+      <MapView style={{
+              width: Dimensions.get('window').width,
+              height: Dimensions.get('window').height,
+              zIndex : -1,}} 
+              initialRegion={{ 
+                latitude: currentLoc.latitude, 
+                longitude: currentLoc.longitude, 
+                latitudeDelta: 0.015, longitudeDelta: 0.005 }
+              }
+        showsUserLocation = {true}
+        showsMyLocationButton = {true}
+        onPress = {(e) => {if(addMode){setLocation({ marker: e.nativeEvent.coordinate })}}}>
+
+{/* 사용 모드일때만 거리 계산 & 쓰레기 버리기 가능 */}
+      { !addMode&&
+        Object.values(locas).map(
+          a => 
+          <Marker 
+            key = {a.id}
+            coordinate={{
+            latitude : a.latitude,
+            longitude : a.longitude,
+          }}
           image = {images.cusMark}
-        />
-    }
-    { !addMode&&
-      Object.values(locas).map(
-        a => 
-        <Marker 
-          key = {a.id}
-          coordinate={{
-          latitude : a.latitude,
-          longitude : a.longitude,
-        }}
-        image = {images.cusMark}
-        onPress = {() => {setCurrentMarker(a.id)}}>
-        <Callout tooltip onPress = {delData}>
-          <CusCallout />
-        </Callout>
-        {
-        getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
-          {latitude : a.latitude, longitude : a.longitude}) < 100 ?
-          (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null)
-        }
-        </Marker>)
-    }
-    { addMode&&
-      Object.values(locas).map(
-        a => 
-        <Marker 
-          key = {a.id}
-          coordinate={{
-          latitude : a.latitude,
-          longitude : a.longitude,
-        }}
-        image = {images.grayMark}
-        onPress = {() => {setCurrentMarker(a.id)}}>
-        </Marker>)
-    }
-    </MapView>
-    { console.log("locas 출력 : ")}
-    { console.log(locas)}
-    </Container>
-    <UIBOX onLayout = {onLayout}>
-      <ScoreBoard windowWidth = {windowWidth - 120}>
-        {/* <TextImage source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.3*parentHeight} margin = {0.01*parentHeight}/> */}
-        <Text>{playerScore}</Text>
-      </ScoreBoard>
-      <IconBoX >
-       {(!addMode&&
-       <IconButton type = {images.plus} onPressOut={() => setAddMode(true)} parentHeight = {parentHeight} />
-       )
-       ||
-       (addMode&&
-       <IconButton type = {images.done} onPressOut={storeData} parentHeight = {parentHeight} />)
-       }
-        {(!addMode&&<TextImage source = {images.addText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>) || 
-        (addMode&&<TextImage source = {images.doneText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>)}
-      </IconBoX>
-    </UIBOX>
+          onPress = {() => {setCurrentMarker(a.id)}}>
+          <Callout tooltip onPress = {delData}>
+            <CusCallout />
+          </Callout>
+          {
+          getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
+            {latitude : a.latitude, longitude : a.longitude}) < 100 ?
+            (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null)
+          }
+          </Marker>)
+      }
+
+{/* 추가모드 */}
+      { addMode&&
+        Object.values(locas).map(
+          a => 
+          <Marker 
+            key = {a.id}
+            coordinate={{
+            latitude : a.latitude,
+            longitude : a.longitude,
+          }}
+          image = {images.grayMark}
+          onPress = {() => {setCurrentMarker(a.id)}}>
+          </Marker>)
+      }
+{/* 추가 모드에서 찍는 위치 마커로 표시 */}
+      {location&& addMode&&
+          <Marker 
+            coordinate = {location.marker}
+            image = {images.cusMark}
+          />
+      }
+      </MapView>
+      </Container>
+
+{/* 하단부 UI단 */}
+      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddMode = {setAddMode}/>
     </ThemeProvider>
+
   ) : (
+
     <AppLoading
       startAsync={getLoaction}
       onFinish = {() => setLoading(true)}
       onError = {console.warn}
       />
+
   );
 };
