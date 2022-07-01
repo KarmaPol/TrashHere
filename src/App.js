@@ -53,7 +53,7 @@ export default function App() {
     const [currentLoc, setCurrentLoc] = useState(null); //현재 사용자 위치
     const [currentMarker, setCurrentMarker] = useState(null); //선택한 마커의 정보
     const [addMode, setAddMode] = useState(false); //add 모드인지?
-    const [throwMode, setThrowMode] = useState(true);
+    const [throwMode, setThrowMode] = useState(true); // 로대시로 쿨타임 조정
     const [throwPossible, setThrowPossible] = useState(false); //사용자가 현재 버리기 행동을 할수 있나? = 현재 활성화된 쓰레기통이 있나?
     const [activatedCan, setActivatedCan] = useState(null); //활성화된 쓰레기통의 정보
     const [playerScore, setScore] = useState(0);
@@ -82,7 +82,7 @@ export default function App() {
       }
       setAddMode(false);
       setThrowMode(true); //for test
-      loadData;
+      loadData();
       setLocation(null);
     };
 
@@ -105,33 +105,34 @@ export default function App() {
       });
     };
 
-    const delData = () => {
-      if(currentMarker){
-      const reference = ref(db, 'locations/' + currentMarker);
+    const delData = (id) => {
+      const reference = ref(db, 'locations/' + id);
       set(reference, null);
-
-      loadData;
-      setCurrentMarker(null);
-      }
+      throwReset;
     };
-// weight만 업데이트 함수
+
+// weight 업데이트 함수
     const updateData = (id, v) => { 
       
       const reference = ref(db, 'locations/' + id);
-      let tempWeight = 0;
+      let tempWeight = null;
       
       onValue(reference, (snapshot) => {
+        if(snapshot.val() != null){
         tempWeight = snapshot.val().weight;
+        }
       });
+      if(tempWeight != null){
 
-      tempWeight = Number(tempWeight) + v;
-      if(tempWeight < 0){
-        delData
-      }
-      else {
-        update(ref(db, '/locations/' + id), {
-          weight : tempWeight,
-        })
+        tempWeight = Number(tempWeight) + v;
+        if(tempWeight < 0){
+          delData(id);
+        }
+        else {
+          update(ref(db, '/locations/' + id), {
+            weight : tempWeight,
+          })
+        }
       }
     }
 
@@ -139,14 +140,32 @@ export default function App() {
     const throwTrash = () => {
       console.log("trash Throw" + activatedCan.id );
       updateData(activatedCan.id, 1);
-      loadData;
-      throwSetting
-      setThrowMode(false)
+      throwReset();
+    }
+    
+    const throwReset = () => {
+      setActivatedCan(null);
+      setThrowPossible(false);
+      console.log(activatedCan);
     }
 
     const throwSetting = (trashCan) => {
       setActivatedCan({id : trashCan.id});
       setThrowPossible(true);
+    }
+
+// 쓰레기통 dislike 함수
+    const dislike = () => {
+      if(currentMarker){
+        updateData(currentMarker, -2);
+      }
+    }
+
+// 쓰레기통들과의 거리측정 함수
+    const measureDistance = (a) => {
+      getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
+        {latitude : a.latitude, longitude : a.longitude}) < 100 ?
+        (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null);
     }
 
     useEffect(loadData, []);
@@ -187,13 +206,11 @@ export default function App() {
           }}
           image = {images.cusMark}
           onPress = {() => {setCurrentMarker(a.id)}}>
-          <Callout tooltip onPress = {delData}>
+          <Callout tooltip onPress = {dislike}>
             <CusCallout />
           </Callout>
           {
-          getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
-            {latitude : a.latitude, longitude : a.longitude}) < 100 ?
-            (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null)
+            measureDistance(a)
           }
           </Marker>)
       }
