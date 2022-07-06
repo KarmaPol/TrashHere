@@ -1,7 +1,4 @@
-import React, { useEffect, useRef } from "react";
-import { TouchableOpacity } from "react-native";
 import styled from "styled-components/native";
-import { Animated } from "react-native";
 
 const Button = styled.TouchableOpacity`
     height : ${props => props.width}px;

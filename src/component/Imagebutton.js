@@ -5,13 +5,13 @@ import PropTypes from 'prop-types';
 import {images} from './Image';
 
 const Icon = styled.Image`
-    height : ${props => props.parentHeight};
-    width : ${props => props.parentHeight};
+    height : ${props => props.parentHeight}px;
+    width : ${props => props.parentHeight}px;
     margin : ${props => props.margin}px;
 `;
 
 export const TextImage = styled.Image`
-    height : ${props => props.parentHeight};
+    height : ${props => props.parentHeight}px;
     margin : ${props => props.margin}px;
 `;
 

@@ -28,7 +28,7 @@ const ScoreBoard = styled.View`
     justify-content : flex-start;
     align-items : flex-start;
     position : absolute;
-    right : ${props => props.windowWidth};
+    right : ${props => props.windowWidth}px;
 `
 
 const IconBoX = styled.View`
