@@ -44,7 +44,7 @@ const Text = styled.Text`
   color: #000000;
 `;
 
-export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode} ) => {
+export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode, userScore} ) => {
 
     const [parentHeight, setParentHeight] = useState(0); //하단 uibox 높이
 
@@ -57,7 +57,7 @@ export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode} ) =>
         <UIBOX onLayout = {onLayout}>
             <ScoreBoard windowWidth = {windowWidth - 120}>
             {/* <TextImage source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.6*parentHeight} margin = {0.001*parentHeight}/> */}
-            <Text>123</Text>
+            <Text>{userScore}</Text>
             </ScoreBoard>
             <IconBoX >
             {(!addMode&& 

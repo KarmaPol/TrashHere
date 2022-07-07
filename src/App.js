@@ -50,7 +50,7 @@ const windowHeight = Dimensions.get('window').height;
 
 export default function App() {
 
-    const [userScore, setScore] = useState(1);
+    const [userScore, setScore] = useState(100); //유저 score 초기값
     const [userID, setID] = useState('default');
 
     const [isReady, setLoading] = useState(false); //어플이 준비되었는지
@@ -65,6 +65,7 @@ export default function App() {
 
     useEffect(() =>{
       _getUserID();
+
     }, []);
 
     const preload = async() => {
@@ -91,21 +92,50 @@ export default function App() {
         _userID = uuid.v4();
         setID(() => _userID);
         await AsyncStorage.setItem('userID', _userID);
+        storeUserData(_userID);
       }
       else {
         _userID = await AsyncStorage.getItem('userID');
         if(_userID !== null){
-            console.log('test2');
             setID(_userID);
             console.log(userID);
-            // AsyncStorage.clear(); 테스트용 초기화
+            // AsyncStorage.clear(); //테스트용
         }
       }
     }
 
     useEffect(() => {
-      console.log(userID);
-    }, [userID]);
+      console.log("유저 ID : " + userID);
+      loadUserData();
+    }, [userID]); //userID 동기 처리
+
+// user Data firebase에 저장
+    const storeUserData = (_userID) => {
+      const reference = ref(db, 'users/' + _userID);
+      set(reference, {
+        score: userScore,
+      });
+    }
+
+    const loadUserData = () => {
+      const readRef = ref(db, 'users/' + userID);
+      let temp;
+      console.log("탐색중" + userID);
+       onValue(readRef, (snapshot) => {
+        if(snapshot.val() != null){
+          temp = snapshot.val().score;
+          setScore(temp);
+        }
+      });
+
+      console.log("유저 스코어 로딩중.." + userScore);
+    }
+
+    useEffect(() => {
+      console.log("유저 스코어를 불러옵니다.. : " + userScore);
+    }, [userScore]); //userScore 동기처리
+
+// 맵 데이터 저장 & 로드
 
     const storeData = () => {
       if(location){
@@ -114,7 +144,7 @@ export default function App() {
       
       const reference = ref(db, 'locations/' + ID);
       set(reference, {
-        id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 10,
+        id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 10, creator : userID,
       });
       }
       setAddMode(false);
@@ -135,7 +165,6 @@ export default function App() {
           id : child.val().id,
           latitude : child.val().latitude,
           longitude : child.val().longitude,
-          weight : child.val().weight,
         });
         });
         setLocations(temp);
@@ -148,7 +177,7 @@ export default function App() {
       throwReset;
     };
 
-  // weight 업데이트 함수
+// weight 업데이트 함수
       const updateData = (id, v) => { 
         
         const reference = ref(db, 'locations/' + id);
@@ -220,7 +249,7 @@ export default function App() {
 {/* 맵 출력 */}
       <MapView style={{
               width: Dimensions.get('window').width,
-              height: Dimensions.get('window').height,
+              height: Dimensions.get('window').height * 1.2,
               zIndex : -1,}} 
               initialRegion={{ 
                 latitude: currentLoc.latitude, 
@@ -277,7 +306,7 @@ export default function App() {
       </Container>
 
 {/* 하단부 UI단 */}
-      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddMode = {setAddMode}/>
+      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddMode = {setAddMode} userScore = {userScore}/>
     </ThemeProvider>
 
   ) : (
