@@ -19,7 +19,6 @@ import { UiComponents } from './component/UiComponents';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
-
 LogBox.ignoreLogs(['Setting a timer']);
 
 const firebaseConfig = {
@@ -85,7 +84,6 @@ export default function App() {
     const _getUserID = async () => {
       let _userID, _isFirst;
       _isFirst = await AsyncStorage.getItem('isFirst'); // 실행한적 있는지 조회
-      console.log(_isFirst);
       if(_isFirst != "false"){ //실행한적 없을 경우 아이디 발급 후 저장
         await AsyncStorage.setItem('isFirst', "false"); //처음 실행한뒤 false로 저장
         console.log('아이디 발급중');
@@ -130,10 +128,39 @@ export default function App() {
 
       console.log("유저 스코어 로딩중.." + userScore);
     }
+// user score 업데이트
+    const updateUserData = (_userID, v) => { 
+      
+      console.log("해당 유저 점수를 업데이트합니다" + _userID);
+      const reference = ref(db, 'users/' + _userID);
+      let tempScore = null;
+      
 
-    useEffect(() => {
-      console.log("유저 스코어를 불러옵니다.. : " + userScore);
-    }, [userScore]); //userScore 동기처리
+
+      onValue(reference, (snapshot) => {
+        if(snapshot.val() != null){
+          tempScore = snapshot.val().score;
+          console.log("안 " + tempScore);
+          }
+      })
+    
+      
+      console.log("밖 " +tempScore);
+
+      if(tempScore != null){
+        console.log(tempScore);
+        tempScore = Number(tempScore) + v;
+        if(tempScore < 0){
+          delData(id);
+        }
+        else {
+          update(ref(db, 'users/' + _userID), {
+            score : tempScore,
+          })
+        }
+      }// 동기 처리 해줘야함
+      
+    }
 
 // 맵 데이터 저장 & 로드
 
@@ -182,10 +209,12 @@ export default function App() {
         
         const reference = ref(db, 'locations/' + id);
         let tempWeight = null;
+        let creatorName = null;
         
         onValue(reference, (snapshot) => {
           if(snapshot.val() != null){
           tempWeight = snapshot.val().weight;
+          creatorName = snapshot.val().creator;
           }
         });
         if(tempWeight != null){
@@ -200,6 +229,10 @@ export default function App() {
             })
           }
         }
+        console.log("creator : " + creatorName);
+        if(creatorName != null && v > 0 && creatorName != userID){
+          updateUserData(creatorName, 1); //바로 적용이 안됨. 한번씩 씹힘..
+        }
       }
 
   // 쓰레기 버리기 함수
@@ -207,6 +240,8 @@ export default function App() {
         console.log("trash Throw" + activatedCan.id );
         updateData(activatedCan.id, 1);
         throwReset();
+        updateUserData(userID, 5);
+        loadData();
       }
       
       const throwReset = () => {
