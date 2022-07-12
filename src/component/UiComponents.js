@@ -37,13 +37,22 @@ const IconBoX = styled.View`
   position : absolute;
 `;
 
+const IconBoX2 = styled.View`
+  flex-direction : column;
+  align-items: center;
+  justify-content : flex-start;
+  position : absolute;
+  left : 43%;
+  top : 15%;
+`
+
 const Text = styled.Text`
-  font-size:15px;
+  font-size: 15px;
   text-align: center;
   color: #000000;
 `;
 
-export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode, userScore} ) => {
+export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode, userScore, cancel} ) => {
 
     const [parentHeight, setParentHeight] = useState(0); //하단 uibox 높이
 
@@ -64,7 +73,14 @@ export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode, user
             )
             ||
             (addMode&&
-            <IconButton type = {images.done} onPressOut={storeData} parentHeight = {parentHeight} />)
+            <>
+            <IconButton type = {images.done} onPressOut={storeData} parentHeight = {parentHeight} />
+            <IconBoX2>
+              <IconButton type = {images.cancel} onPressOut={cancel} parentHeight = {0.8*parentHeight} />
+              <TextImage source = {images.cancelText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*0.8*parentHeight} margin = {0.01*parentHeight}/>
+            </IconBoX2>
+            </>
+            )
             }
             {(!addMode&&<TextImage source = {images.addText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>) || 
             (addMode&&<TextImage source = {images.doneText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>)}

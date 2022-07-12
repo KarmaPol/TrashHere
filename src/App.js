@@ -109,13 +109,14 @@ export default function App() {
     useEffect(() => {
       console.log("유저 ID : " + userID);
       loadUserData();
+      TimerSetting();
     }, [userID]); //userID 동기 처리
 
 // timerTime 받아와서 저장하기
-    const userTimerData = (_userID) => {
+    const storeUserTimerData = (_userID) => {
       let today = new Date();
       const reference = ref(db, 'users/' + _userID);
-      set(reference, {
+      update((reference), {
         timerTime : today.getTime(),
       });
     }
@@ -125,7 +126,7 @@ export default function App() {
       const reference = ref(db, 'users/' + _userID);
       set(reference, {
         score: userScore,
-        timerTime : null,
+        timerTime : 0,
       });
     }
 
@@ -143,23 +144,24 @@ export default function App() {
       console.log("유저 스코어 로딩중.." + userScore);
     }
 
+// user 타이머 설정 firebase 에서 참조
     const TimerSetting = () => {
       const readRef = ref(db, 'users/' + userID);
-      console.log("탐색중" + userID);
+      console.log("타이머 세팅 불러오는 중.." + userID);
       let temp;
       let now = new Date();
+      let correctionValue;
        onValue(readRef, (snapshot) => {
         if(snapshot.val() != null){
           temp = snapshot.val().timerTime;
-          if(now.getTime - temp > 300*1000 || now.getTime - temp < -300*1000 ){
-            setTimer(() => 0);
-          }
-          else {
-            setTimer(() => Math.abs(now.getTime - temp));
+          correctionValue = Math.abs(Math.floor((temp - now.getTime())/1000));
+          console.log("마지막 타이머 호출로 부터 " + correctionValue + "초 지남");
+          if(correctionValue < 300){
+            setTimer(300-correctionValue);
             setThrowMode(false);
             setTimeout(() => {
               setThrowMode(true);
-            }, Math.abs(now.getTime - temp));
+            },(300-correctionValue)*1000); //쿨타임 
           }
         }
       });
@@ -233,6 +235,11 @@ export default function App() {
       });
     };
 
+    const cancel = () => {
+      setAddMode(false);
+      setLocation(null);
+    }
+
     const delData = (id) => {
       const reference = ref(db, 'locations/' + id);
       set(reference, null);
@@ -277,9 +284,9 @@ export default function App() {
         throwReset();
         updateUserData(userID, 5);
         loadData();
-        setTimer(300*1000);
+        setTimer(300);
         setThrowMode(false);
-       
+        storeUserTimerData(userID);
         setTimeout(() => {
           setThrowMode(true);
         },300*1000); //쿨타임 
@@ -326,7 +333,7 @@ export default function App() {
       backgroundColor={theme.background}/>
 
 {/* 버리기 쿨타임 */}
-      {!throwMode&&!addMode&&<TrashTimer _time = {userTimer}/>}
+      {!throwMode&&<TrashTimer _time = {userTimer}/>}
 {/* 버리기 버튼 출력 */}
       {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} windowWidth = {windowWidth} windowHeight ={windowHeight} throwTrash = {throwTrash}/>}
 
@@ -390,7 +397,7 @@ export default function App() {
       </Container>
 
 {/* 하단부 UI단 */}
-      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddMode = {setAddMode} userScore = {userScore}/>
+      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddMode = {setAddMode} userScore = {userScore} cancel = {cancel}/>
     </ThemeProvider>
 
   ) : (

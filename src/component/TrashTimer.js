@@ -43,14 +43,16 @@ export function useInterval(callback, delay) {
   }
 
 export const TrashTimer = ({_time}) => {
-const [time, setTime] = useState(0);
+const [time, setTime] = useState(_time*1000);
 
 useEffect(() => {
-    setTime(_time);
+    setTime(() => _time*1000);
+    console.log("타이어 모듈내 입력 타임 : " + time);
 }, []);
 
 useInterval(() => {
   setTime((ltime) => ltime - 1000);
+//   console.log("타이어 모듈내 입력 타임 : " + time);
 },1000)
 return(
   <TimerBox>

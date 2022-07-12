@@ -6,6 +6,8 @@ import DoneText from '../assets/doneText.png';
 import AddCusMark from '../assets/custom_marker_gray.png';
 import TrashClick from '../assets/trashClick.png';
 import Leafs from '../assets/leafs.png';
+import Cancel from '../assets/Cancel.png';
+import CancelText from '../assets/Canceltext.png';
 
 export const images = {
     done : Done,
@@ -16,4 +18,6 @@ export const images = {
     doneText : DoneText,
     trashClick : TrashClick,
     leafs : Leafs,
+    cancel : Cancel,
+    cancelText : CancelText,
 };
