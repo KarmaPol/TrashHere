@@ -15,7 +15,7 @@ import { CusCallout } from './component/CustomCallout';
 import { getDistance} from 'geolib';
 import { TrashButton } from './component/TrashButton';
 import { UiComponents } from './component/UiComponents';
-// import { storeLocalData, getLocalData } from './component/LocalData';
+import { TrashTimer, useInterval } from './component/TrashTimer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
@@ -49,6 +49,8 @@ const windowHeight = Dimensions.get('window').height;
 
 export default function App() {
 
+    const [userTimer, setTimer] = useState(0);
+
     const [userScore, setScore] = useState(100); //유저 score 초기값
     const [userID, setID] = useState('default');
 
@@ -64,22 +66,24 @@ export default function App() {
 
     useEffect(() =>{
       _getUserID();
-
     }, []);
 
     const preload = async() => {
         try {
             await Location.requestForegroundPermissionsAsync();
             let {coords} = await Location.getCurrentPositionAsync({});
-            console.log(coords.latitude, coords.longitude);
+            // console.log(coords.latitude, coords.longitude);
             setCurrentLoc(coords);
-            
         }
         catch (e) {
             console.log("오류발생,,");
             Alert.alert("위치정보를 가져올수 없습니다..");
         }
     };
+
+    useInterval(() => {
+      preload();
+    }, 3000)
 
     const _getUserID = async () => {
       let _userID, _isFirst;
@@ -107,11 +111,21 @@ export default function App() {
       loadUserData();
     }, [userID]); //userID 동기 처리
 
+// timerTime 받아와서 저장하기
+    const userTimerData = (_userID) => {
+      let today = new Date();
+      const reference = ref(db, 'users/' + _userID);
+      set(reference, {
+        timerTime : today.getTime(),
+      });
+    }
+
 // user Data firebase에 저장
     const storeUserData = (_userID) => {
       const reference = ref(db, 'users/' + _userID);
       set(reference, {
         score: userScore,
+        timerTime : null,
       });
     }
 
@@ -128,14 +142,37 @@ export default function App() {
 
       console.log("유저 스코어 로딩중.." + userScore);
     }
+
+    const TimerSetting = () => {
+      const readRef = ref(db, 'users/' + userID);
+      console.log("탐색중" + userID);
+      let temp;
+      let now = new Date();
+       onValue(readRef, (snapshot) => {
+        if(snapshot.val() != null){
+          temp = snapshot.val().timerTime;
+          if(now.getTime - temp > 300*1000 || now.getTime - temp < -300*1000 ){
+            setTimer(() => 0);
+          }
+          else {
+            setTimer(() => Math.abs(now.getTime - temp));
+            setThrowMode(false);
+            setTimeout(() => {
+              setThrowMode(true);
+            }, Math.abs(now.getTime - temp));
+          }
+        }
+      });
+
+      console.log("유저 타이머 로딩중.." + userTimer);
+    }
+
 // user score 업데이트
     const updateUserData = (_userID, v) => { 
       
       console.log("해당 유저 점수를 업데이트합니다" + _userID);
       const reference = ref(db, 'users/' + _userID);
       let tempScore = null;
-      
-
 
       onValue(reference, (snapshot) => {
         if(snapshot.val() != null){
@@ -159,7 +196,6 @@ export default function App() {
           })
         }
       }// 동기 처리 해줘야함
-      
     }
 
 // 맵 데이터 저장 & 로드
@@ -175,7 +211,6 @@ export default function App() {
       });
       }
       setAddMode(false);
-      setThrowMode(true); //for test
       loadData();
       setLocation(null);
     };
@@ -242,7 +277,18 @@ export default function App() {
         throwReset();
         updateUserData(userID, 5);
         loadData();
+        setTimer(300*1000);
+        setThrowMode(false);
+       
+        setTimeout(() => {
+          setThrowMode(true);
+        },300*1000); //쿨타임 
       }
+
+      useEffect(() => {
+        console.log("타이머 : " + userTimer);
+      }
+      ,[userTimer]);
       
       const throwReset = () => {
         setActivatedCan(null);
@@ -264,11 +310,12 @@ export default function App() {
 
   // 쓰레기통들과의 거리측정 함수
       const measureDistance = (a) => {
+        if(throwPossible != true){
         getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
           {latitude : a.latitude, longitude : a.longitude}) < 100 ?
           (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null);
+        }
       }
-
       useEffect(loadData, []);
 
   return isReady?(
@@ -278,6 +325,8 @@ export default function App() {
       barStyle='dark-content'
       backgroundColor={theme.background}/>
 
+{/* 버리기 쿨타임 */}
+      {!throwMode&&!addMode&&<TrashTimer _time = {userTimer}/>}
 {/* 버리기 버튼 출력 */}
       {throwMode&&!addMode&&throwPossible&&<TrashButton type ={images.trashClick} windowWidth = {windowWidth} windowHeight ={windowHeight} throwTrash = {throwTrash}/>}
 

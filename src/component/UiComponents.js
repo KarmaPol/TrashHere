@@ -1,8 +1,7 @@
-import React, {useState} from "react";
+import React, {useEffect, useState, useRef} from "react";
 import styled from "styled-components/native";
 import { TextImage, IconButton } from '../component/Imagebutton';
 import { images } from '../component/Image';
-
 
 const UIBOX = styled.View`
     flex: 1;

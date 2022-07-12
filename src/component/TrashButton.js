@@ -3,7 +3,7 @@ import styled from "styled-components/native";
 const Button = styled.TouchableOpacity`
     height : ${props => props.width}px;
     width : ${props => props.width}px;
-    top : 75%;
+    top : 80%;
     left : ${props => props.left}px;
     position : absolute;
     z-index : 20;
