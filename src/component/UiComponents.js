@@ -52,7 +52,7 @@ const Text = styled.Text`
   color: #000000;
 `;
 
-export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode, userScore, cancel} ) => {
+export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, setAddMode, userScore, cancel} ) => {
 
     const [parentHeight, setParentHeight] = useState(0); //하단 uibox 높이
 
@@ -69,7 +69,7 @@ export const UiComponents = ( {windowWidth, addMode, storeData, setAddMode, user
             </ScoreBoard>
             <IconBoX >
             {(!addMode&& 
-            <IconButton type = {images.plus} onPressOut={() => setAddMode(true)} parentHeight = {parentHeight} />
+            <IconButton type = {images.plus} onPressOut={() => {setAddPossible(true); setAddMode(true)}} parentHeight = {parentHeight} />
             )
             ||
             (addMode&&

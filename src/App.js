@@ -1,5 +1,5 @@
 import React, {useEffect, useLayoutEffect, useState} from 'react';
-import { StatusBar, Dimensions, Alert } from 'react-native';
+import { StatusBar, Dimensions, Alert, TurboModuleRegistry } from 'react-native';
 import { theme } from './theme';
 import MapView from 'react-native-maps';
 import { Callout, Marker } from 'react-native-maps';
@@ -59,6 +59,7 @@ export default function App() {
     const [locas, setLocations] = useState({}) //화면에 출력해줄 모든 마커들의 정보 
     const [currentLoc, setCurrentLoc] = useState(null); //현재 사용자 위치
     const [currentMarker, setCurrentMarker] = useState(null); //선택한 마커의 정보
+    const [addPossible, setAddPossible] = useState(true); // add 가능한지?
     const [addMode, setAddMode] = useState(false); //add 모드인지?
     const [throwMode, setThrowMode] = useState(true); // 로대시로 쿨타임 조정
     const [throwPossible, setThrowPossible] = useState(false); //사용자가 현재 버리기 행동을 할수 있나? = 현재 활성화된 쓰레기통이 있나?
@@ -197,25 +198,40 @@ export default function App() {
             score : tempScore,
           })
         }
-      }// 동기 처리 해줘야함
+      }
     }
 
 // 맵 데이터 저장 & 로드
 
     const storeData = () => {
       if(location){
-      const ID = Date.now().toString();
-      console.log(ID);
-      
-      const reference = ref(db, 'locations/' + ID);
-      set(reference, {
-        id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 10, creator : userID,
-      });
+      if(userScore >= 10){
+        console.log(addPossible);
+          if(addPossible == true){
+            updateUserData(userID, -10);
+            const ID = Date.now().toString();
+            console.log(ID);
+            
+            const reference = ref(db, 'locations/' + ID);
+            set(reference, {
+              id: ID, latitude:location.marker.latitude, longitude:location.marker.longitude, weight : 10, creator : userID,
+            });
+
+            setAddMode(false);
+            loadData();
+            setLocation(null);
+          }
+          else {
+            console.log("해당 지점에 이미 쓰레기통이 있습니다!")
+            alert("해당 지점에 이미 쓰레기통이 있습니다!")
+            setAddPossible(() => true);
+          }
+          }
+        else {
+          alert("점수가 부족합니다!");
+        }
       }
-      setAddMode(false);
-      loadData();
-      setLocation(null);
-    };
+    }; //맵 데이터 추가
 
     const loadData = () => {
 
@@ -233,18 +249,18 @@ export default function App() {
         });
         setLocations(temp);
       });
-    };
+    }; // 맵데이터 로드
 
     const cancel = () => {
       setAddMode(false);
       setLocation(null);
-    }
+    } // 추가 모드에서 취소
 
     const delData = (id) => {
       const reference = ref(db, 'locations/' + id);
       set(reference, null);
       throwReset;
-    };
+    }; // 맵 데이터 삭제
 
 // weight 업데이트 함수
       const updateData = (id, v) => { 
@@ -316,13 +332,22 @@ export default function App() {
       }
 
   // 쓰레기통들과의 거리측정 함수
-      const measureDistance = (a) => {
+      const measureDistance_trash = (b, a) => {
         if(throwPossible != true){
-        getDistance({latitude : currentLoc.latitude, longitude : currentLoc.longitude},
-          {latitude : a.latitude, longitude : a.longitude}) < 100 ?
+        getDistance({latitude : b.latitude, longitude : b.longitude},
+          {latitude : a.latitude, longitude : a.longitude}) < 10 ?
           (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null);
         }
       }
+
+      const measureDistance_add = (b, a) => {
+        if(b != null){
+          getDistance({latitude : b.marker.latitude, longitude : b.marker.longitude},
+            {latitude : a.latitude, longitude : a.longitude}) < 11 ?
+            (addPossible == true ? setAddPossible(() => false) : () => {}) : (() => {});
+        }
+      }
+
       useEffect(loadData, []);
 
   return isReady?(
@@ -366,8 +391,8 @@ export default function App() {
           <Callout tooltip onPress = {dislike}>
             <CusCallout />
           </Callout>
-          {
-            measureDistance(a)
+          { 
+            measureDistance_trash(currentLoc, a)
           }
           </Marker>)
       }
@@ -384,6 +409,9 @@ export default function App() {
           }}
           image = {images.grayMark}
           onPress = {() => {setCurrentMarker(a.id)}}>
+          {
+            measureDistance_add(location, a)
+          }
           </Marker>)
       }
 {/* 추가 모드에서 찍는 위치 마커로 표시 */}
@@ -397,7 +425,7 @@ export default function App() {
       </Container>
 
 {/* 하단부 UI단 */}
-      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddMode = {setAddMode} userScore = {userScore} cancel = {cancel}/>
+      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddPossible = {setAddPossible} setAddMode = {setAddMode} userScore = {userScore} cancel = {cancel}/>
     </ThemeProvider>
 
   ) : (
