@@ -1,5 +1,5 @@
 import React, {useEffect, useLayoutEffect, useState} from 'react';
-import { StatusBar, Dimensions, Alert, TurboModuleRegistry } from 'react-native';
+import { Image, StatusBar, Dimensions, Alert, ToastAndroid } from 'react-native';
 import { theme } from './theme';
 import MapView from 'react-native-maps';
 import { Callout, Marker } from 'react-native-maps';
@@ -8,8 +8,9 @@ import * as Location from "expo-location";
 import AppLoading from 'expo-app-loading';
 import 'react-native-gesture-handler';
 import { images } from './component/Image';
-import { getDatabase, ref, onValue, set, update, get, orderByKey } from 'firebase/database';
+import { getDatabase, ref, onValue, set, update } from 'firebase/database';
 import { initializeApp } from "firebase/app";
+import { Icon } from './component/Imagebutton';
 import { LogBox } from 'react-native';
 import { CusCallout } from './component/CustomCallout';
 import { getDistance} from 'geolib';
@@ -49,9 +50,10 @@ const windowHeight = Dimensions.get('window').height;
 
 export default function App() {
 
+    const [helpMode, setHelpMode] = useState(false); //도움말
     const [userTimer, setTimer] = useState(0);
-
-    const [userScore, setScore] = useState(100); //유저 score 초기값
+    
+    const [userScore, setScore] = useState(30); //유저 score 초기값
     const [userID, setID] = useState('default');
 
     const [isReady, setLoading] = useState(false); //어플이 준비되었는지
@@ -73,7 +75,6 @@ export default function App() {
         try {
             await Location.requestForegroundPermissionsAsync();
             let {coords} = await Location.getCurrentPositionAsync({});
-            // console.log(coords.latitude, coords.longitude);
             setCurrentLoc(coords);
         }
         catch (e) {
@@ -81,6 +82,14 @@ export default function App() {
             Alert.alert("위치정보를 가져올수 없습니다..");
         }
     };
+
+    const showToastWithGravity = (msg) => {
+      ToastAndroid.showWithGravity(
+        msg,
+        ToastAndroid.SHORT,
+        ToastAndroid.TOP,
+      );
+    }; //toast 메시지
 
     useInterval(() => {
       preload();
@@ -93,7 +102,7 @@ export default function App() {
         await AsyncStorage.setItem('isFirst', "false"); //처음 실행한뒤 false로 저장
         console.log('아이디 발급중');
         _userID = uuid.v4();
-        setID(() => _userID);
+        setID(_userID);
         await AsyncStorage.setItem('userID', _userID);
         storeUserData(_userID);
       }
@@ -102,6 +111,7 @@ export default function App() {
         if(_userID !== null){
             setID(_userID);
             console.log(userID);
+
             // AsyncStorage.clear(); //테스트용
         }
       }
@@ -110,12 +120,14 @@ export default function App() {
     useEffect(() => {
       console.log("유저 ID : " + userID);
       loadUserData();
-      TimerSetting();
+      // TimerSetting();
     }, [userID]); //userID 동기 처리
 
 // timerTime 받아와서 저장하기
-    const storeUserTimerData = (_userID) => {
+    const storeUserTimerData = async (_userID) => {
       let today = new Date();
+      console.log("유저 현재 시각 저장");
+      console.log("현재 시각 : " + today.getTime());
       const reference = ref(db, 'users/' + _userID);
       update((reference), {
         timerTime : today.getTime(),
@@ -123,11 +135,13 @@ export default function App() {
     }
 
 // user Data firebase에 저장
-    const storeUserData = (_userID) => {
+    const storeUserData = async (_userID) => {
+      let today = new Date();
       const reference = ref(db, 'users/' + _userID);
       set(reference, {
         score: userScore,
         timerTime : 0,
+        loginTime : today.getTime(),
       });
     }
 
@@ -142,50 +156,65 @@ export default function App() {
         }
       });
 
-      console.log("유저 스코어 로딩중.." + userScore);
     }
 
 // user 타이머 설정 firebase 에서 참조
     const TimerSetting = () => {
-      const readRef = ref(db, 'users/' + userID);
-      console.log("타이머 세팅 불러오는 중.." + userID);
-      let temp;
-      let now = new Date();
-      let correctionValue;
-       onValue(readRef, (snapshot) => {
-        if(snapshot.val() != null){
-          temp = snapshot.val().timerTime;
-          correctionValue = Math.abs(Math.floor((temp - now.getTime())/1000));
-          console.log("마지막 타이머 호출로 부터 " + correctionValue + "초 지남");
-          if(correctionValue < 300){
-            setTimer(300-correctionValue);
-            setThrowMode(false);
-            setTimeout(() => {
-              setThrowMode(true);
-            },(300-correctionValue)*1000); //쿨타임 
-          }
-        }
-      });
 
-      console.log("유저 타이머 로딩중.." + userTimer);
+        console.log("TimerSetting 함수 시작");
+
+        const readRef = ref(db, 'users/' + userID);
+        console.log("타이머 세팅 불러오는 중.." + userID);
+        let temp;
+        let now = new Date();
+        let correctionValue;
+        onValue(readRef, (snapshot) => {
+          if(snapshot.val() != null){
+            console.log("test5");
+
+            temp = snapshot.val().timerTime;
+            console.log("타이머 타임 : " + temp);
+            console.log("현재 타임 : " + now.getTime());
+            correctionValue = Math.abs(Math.floor((temp - now.getTime())/1000));
+            console.log("correctionV : " + correctionValue);
+            console.log("마지막 타이머 호출로 부터 " + correctionValue + "초 지남");
+            if(correctionValue < 300){
+              setTimer(300-correctionValue);
+              console.log("if 내부에서 timer값 : " + userTimer);
+              setThrowMode(false);
+              setTimeout(() => {
+                setThrowMode(true);
+              },(300-correctionValue)*1000); //쿨타임 
+            }
+          }
+        }, {
+          onlyOnce: true
+        });
+        console.log("test6");
+
+        console.log("유저 타이머 로딩중.." + userTimer);
     }
+    useEffect(() => {
+      console.log(userTimer);
+    }, [userTimer]);
 
 // user score 업데이트
-    const updateUserData = (_userID, v) => { 
+    const updateUserData = async (_userID, v) => { 
+      console.log("updateUserData 함수 시작");
       
       console.log("해당 유저 점수를 업데이트합니다" + _userID);
       const reference = ref(db, 'users/' + _userID);
-      let tempScore = null;
-
-      onValue(reference, (snapshot) => {
-        if(snapshot.val() != null){
-          tempScore = snapshot.val().score;
-          console.log("안 " + tempScore);
-          }
-      })
-    
+      let tempScore;
       
-      console.log("밖 " +tempScore);
+      
+      onValue(reference, (snapshot) => {
+        tempScore = snapshot.val().score;
+        console.log("onValue 함수 내에서 스코어 조회 : " + tempScore);
+      }, {
+        onlyOnce : true
+      });
+      
+      console.log("updateUserData 함수에서" + _userID + "의 score 조회 : " + tempScore);
 
       if(tempScore != null){
         console.log(tempScore);
@@ -220,17 +249,20 @@ export default function App() {
             setAddMode(false);
             loadData();
             setLocation(null);
+            showToastWithGravity("쓰레기통 추가 성공!");
           }
           else {
             console.log("해당 지점에 이미 쓰레기통이 있습니다!")
-            alert("해당 지점에 이미 쓰레기통이 있습니다!")
+            showToastWithGravity("이미 쓰레기통이 있습니다!");
             setAddPossible(() => true);
           }
           }
         else {
-          alert("점수가 부족합니다!");
+          showToastWithGravity("점수가 부족합니다!");
         }
+       
       }
+      
     }; //맵 데이터 추가
 
     const loadData = () => {
@@ -263,18 +295,22 @@ export default function App() {
     }; // 맵 데이터 삭제
 
 // weight 업데이트 함수
-      const updateData = (id, v) => { 
-        
-        const reference = ref(db, 'locations/' + id);
+      const updateData = async (id, v) => { 
         let tempWeight = null;
         let creatorName = null;
         
+        const reference = ref(db, 'locations/' + id);
         onValue(reference, (snapshot) => {
           if(snapshot.val() != null){
           tempWeight = snapshot.val().weight;
           creatorName = snapshot.val().creator;
           }
+        },
+        {
+          onlyOnce : true
         });
+        console.log("dislike 버튼의 가중치 값 : " + tempWeight);
+        
         if(tempWeight != null){
 
           tempWeight = Number(tempWeight) + v;
@@ -294,24 +330,30 @@ export default function App() {
       }
 
   // 쓰레기 버리기 함수
-      const throwTrash = () => {
+      const throwTrash = async () => {
         console.log("trash Throw" + activatedCan.id );
         updateData(activatedCan.id, 1);
         throwReset();
         updateUserData(userID, 5);
         loadData();
-        setTimer(300);
+        async function setTime() {setTimer(300);}
+        await setTime();
         setThrowMode(false);
-        storeUserTimerData(userID);
         setTimeout(() => {
           setThrowMode(true);
         },300*1000); //쿨타임 
+        storeUserTimerData(userID);
+        showToastWithGravity("쓰레기통 이용 성공!");
       }
 
       useEffect(() => {
         console.log("타이머 : " + userTimer);
       }
       ,[userTimer]);
+
+      useEffect(() => {
+        console.log("throw Mode : " + throwMode);
+      }, [throwMode]);
       
       const throwReset = () => {
         setActivatedCan(null);
@@ -335,7 +377,7 @@ export default function App() {
       const measureDistance_trash = (b, a) => {
         if(throwPossible != true){
         getDistance({latitude : b.latitude, longitude : b.longitude},
-          {latitude : a.latitude, longitude : a.longitude}) < 10 ?
+          {latitude : a.latitude, longitude : a.longitude}) < 7 ?
           (activatedCan == null ? throwSetting(a) : null) : (activatedCan == a.id ? throwReset() : null);
         }
       }
@@ -343,12 +385,27 @@ export default function App() {
       const measureDistance_add = (b, a) => {
         if(b != null){
           getDistance({latitude : b.marker.latitude, longitude : b.marker.longitude},
-            {latitude : a.latitude, longitude : a.longitude}) < 11 ?
+            {latitude : a.latitude, longitude : a.longitude}) < 7 ?
             (addPossible == true ? setAddPossible(() => false) : () => {}) : (() => {});
         }
       }
 
+      const changeHelpMode = () => {
+        return setHelpMode((ex) => !ex);
+      }
+
       useEffect(loadData, []);
+
+      const HelpBox = styled.Image`
+        width : ${props => props.windowWidth}px;
+        height : ${props => props.windowWidth*(16/11)}px;
+        z-index : 100;
+        background-color: #ffffff;
+        border-radius : 20px;
+        position : absolute;
+        opacity : 0.75;
+        
+      `
 
   return isReady?(
     <ThemeProvider theme = {theme}>
@@ -357,6 +414,9 @@ export default function App() {
       barStyle='dark-content'
       backgroundColor={theme.background}/>
 
+{/* 도움말 */}
+      {helpMode&& <HelpBox source = {images.helpPage} windowWidth = {windowWidth*0.95} onPress = {() => changeHelpMode()}>
+        </HelpBox>}
 {/* 버리기 쿨타임 */}
       {!throwMode&&<TrashTimer _time = {userTimer}/>}
 {/* 버리기 버튼 출력 */}
@@ -425,7 +485,7 @@ export default function App() {
       </Container>
 
 {/* 하단부 UI단 */}
-      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddPossible = {setAddPossible} setAddMode = {setAddMode} userScore = {userScore} cancel = {cancel}/>
+      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddPossible = {setAddPossible} setAddMode = {setAddMode} userScore = {userScore} cancel = {cancel} changeHelpMode = {changeHelpMode}/>
     </ThemeProvider>
 
   ) : (

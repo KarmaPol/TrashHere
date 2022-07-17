@@ -51,9 +51,11 @@ useEffect(() => {
 }, []);
 
 useInterval(() => {
-  setTime((ltime) => ltime - 1000);
-//   console.log("타이어 모듈내 입력 타임 : " + time);
-},1000)
+  if(time >= 1000){
+      setTime((ltime) => ltime - 1000);  } 
+    //   console.log("타이어 모듈내 입력 타임 : " + time);
+    },1000)
+
 return(
   <TimerBox>
     <TimerText>{parseInt((time/1000)) + ' sec'}</TimerText>

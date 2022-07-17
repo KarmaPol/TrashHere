@@ -8,6 +8,9 @@ import TrashClick from '../assets/trashClick.png';
 import Leafs from '../assets/leafs.png';
 import Cancel from '../assets/Cancel.png';
 import CancelText from '../assets/Canceltext.png';
+import Dislike from '../assets/dislike.png';
+import Help from '../assets/help.png';
+import HelpPage from '../assets/helpPage.png';
 
 export const images = {
     done : Done,
@@ -20,4 +23,7 @@ export const images = {
     leafs : Leafs,
     cancel : Cancel,
     cancelText : CancelText,
+    dislike : Dislike,
+    help : Help,
+    helpPage : HelpPage,
 };

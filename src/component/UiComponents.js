@@ -2,6 +2,7 @@ import React, {useEffect, useState, useRef} from "react";
 import styled from "styled-components/native";
 import { TextImage, IconButton } from '../component/Imagebutton';
 import { images } from '../component/Image';
+import { ProgressViewIOSComponent } from "react-native";
 
 const UIBOX = styled.View`
     flex: 1;
@@ -15,19 +16,26 @@ const UIBOX = styled.View`
 `;
 
 const ScoreBoard = styled.View`
-    width : 100px;
-    height : 45px;
-    margin : 10px;
-    padding : 10px;
+    width : 110px;
+    height : 40px;
+    margin : 0px;
+    padding : 0px;
     background-color: #ffffff;
     border-color: #C4C4C4 ;
     border-width : 1px;
     border-radius : 20px;
     flex-direction : row-reverse;
     justify-content : flex-start;
-    align-items : flex-start;
+    align-items : center;
     position : absolute;
     right : ${props => props.windowWidth}px;
+`
+
+const LeafBox = styled.View`
+  width : 40px;
+  height : 40px;
+  position : absolute;
+  left : 100%;
 `
 
 const IconBoX = styled.View`
@@ -46,13 +54,21 @@ const IconBoX2 = styled.View`
   top : 15%;
 `
 
+const IconBoX3 = styled.View`
+  flex-direction : column;
+  align-items: center;
+  position : absolute;
+  left : 260%;
+  top : 15%;
+`
+
 const Text = styled.Text`
-  font-size: 15px;
+  font-size: 20px;
   text-align: center;
   color: #000000;
 `;
 
-export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, setAddMode, userScore, cancel} ) => {
+export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, setAddMode, userScore, cancel, changeHelpMode} ) => {
 
     const [parentHeight, setParentHeight] = useState(0); //하단 uibox 높이
 
@@ -63,9 +79,11 @@ export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, 
 
     return (
         <UIBOX onLayout = {onLayout}>
-            <ScoreBoard windowWidth = {windowWidth - 120}>
-            {/* <TextImage source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.6*parentHeight} margin = {0.001*parentHeight}/> */}
-            <Text>{userScore}</Text>
+            <ScoreBoard windowWidth = {windowWidth - 110 - (parentHeight-40)/2}>
+              <LeafBox>
+                <TextImage source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.55*parentHeight} margin = {0}/>
+              </LeafBox>
+            <Text>{userScore}  </Text>
             </ScoreBoard>
             <IconBoX >
             {(!addMode&& 
@@ -84,7 +102,12 @@ export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, 
             }
             {(!addMode&&<TextImage source = {images.addText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>) || 
             (addMode&&<TextImage source = {images.doneText} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.15*parentHeight} margin = {0.01*parentHeight}/>)}
+            {!addMode&&
+            <IconBoX3>
+              <IconButton type = {images.help} onPressOut={() => {changeHelpMode()}} parentHeight = {0.8*parentHeight} />
+            </IconBoX3>}
             </IconBoX>
         </UIBOX>
+        
     );
 };

@@ -4,7 +4,7 @@ import styled from "styled-components/native";
 import PropTypes from 'prop-types';
 import {images} from './Image';
 
-const Icon = styled.Image`
+export const Icon = styled.Image`
     height : ${props => props.parentHeight}px;
     width : ${props => props.parentHeight}px;
     margin : ${props => props.margin}px;
