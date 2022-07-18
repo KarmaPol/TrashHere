@@ -199,35 +199,43 @@ export default function App() {
     }, [userTimer]);
 
 // user score 업데이트
-    const updateUserData = async (_userID, v) => { 
+    const updateUserData = (_userID, v) => { 
       console.log("updateUserData 함수 시작");
       
       console.log("해당 유저 점수를 업데이트합니다" + _userID);
       const reference = ref(db, 'users/' + _userID);
-      let tempScore;
       
       
-      onValue(reference, (snapshot) => {
+      let promise = new Promise(function(resolve, reject) {
+        onValue(reference, (snapshot) => {
         tempScore = snapshot.val().score;
         console.log("onValue 함수 내에서 스코어 조회 : " + tempScore);
+        resolve(tempScore);
       }, {
         onlyOnce : true
-      });
+      });});
       
-      console.log("updateUserData 함수에서" + _userID + "의 score 조회 : " + tempScore);
+      let tempScore;
 
-      if(tempScore != null){
-        console.log(tempScore);
-        tempScore = Number(tempScore) + v;
-        if(tempScore < 0){
-          delData(id);
+      promise.then(
+        result => {
+          console.log("updateUserData 함수에서" + _userID + "의 score 조회 : " + result);
+          tempScore = result;
+          if(tempScore != null){
+            console.log(tempScore);
+            tempScore = Number(tempScore) + v;
+            if(tempScore < 0){
+              delData(id);
+            }
+            else {
+              update(ref(db, 'users/' + _userID), {
+                score : tempScore,
+              })
+            }
+          }
         }
-        else {
-          update(ref(db, 'users/' + _userID), {
-            score : tempScore,
-          })
-        }
-      }
+       );
+      
     }
 
 // 맵 데이터 저장 & 로드
