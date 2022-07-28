@@ -46,7 +46,7 @@ export const TrashTimer = ({_time}) => {
 const [time, setTime] = useState(_time*1000);
 
 useEffect(() => {
-    setTime(() => _time*1000);
+    setTime(() => (_time-1)*1000);
     console.log("타이어 모듈내 입력 타임 : " + time);
 }, []);
 
@@ -58,7 +58,7 @@ useInterval(() => {
 
 return(
   <TimerBox>
-    <TimerText>{parseInt((time/1000)) + ' sec'}</TimerText>
+    <TimerText>{parseInt((time/1000)) + ' 초'}</TimerText>
   </TimerBox>
 );
 };

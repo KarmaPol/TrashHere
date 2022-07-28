@@ -11,6 +11,7 @@ import CancelText from '../assets/Canceltext.png';
 import Dislike from '../assets/dislike.png';
 import Help from '../assets/help.png';
 import HelpPage from '../assets/helpPage.png';
+import QuestsText from '../assets/QuestsText.png';
 
 export const images = {
     done : Done,
@@ -26,4 +27,5 @@ export const images = {
     dislike : Dislike,
     help : Help,
     helpPage : HelpPage,
+    queststext : QuestsText,
 };

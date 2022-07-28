@@ -40,7 +40,7 @@ export const CusCallout = () => {
     return (
         <Container>
             <Iconbox>
-                <Text>Dislike</Text>
+                <Text>비추천</Text>
             </Iconbox>
             
         </Container>

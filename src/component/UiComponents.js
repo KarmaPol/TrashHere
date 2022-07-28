@@ -1,8 +1,8 @@
-import React, {useEffect, useState, useRef} from "react";
+import React, {  useEffect, useState, useRef} from "react";
 import styled from "styled-components/native";
 import { TextImage, IconButton } from '../component/Imagebutton';
 import { images } from '../component/Image';
-import { ProgressViewIOSComponent } from "react-native";
+import { Animated, ProgressViewIOSComponent } from "react-native";
 
 const UIBOX = styled.View`
     flex: 1;
@@ -10,12 +10,13 @@ const UIBOX = styled.View`
     align-items: center;
     justify-content: center;
     flex-direction: row;
+    border-width : 0.5px;
     border-top-left-radius : 30px;
     border-top-right-radius : 30px;
     z-index : 15;
 `;
 
-const ScoreBoard = styled.View`
+const ScoreBoard = styled.TouchableOpacity`
     width : 110px;
     height : 40px;
     margin : 0px;
@@ -32,10 +33,12 @@ const ScoreBoard = styled.View`
 `
 
 const LeafBox = styled.View`
-  width : 40px;
-  height : 40px;
+  width : 50px;
+  height : 50px;
   position : absolute;
-  left : 100%;
+  left : 55%;
+  justify-content : center;
+  align-items : center;
 `
 
 const IconBoX = styled.View`
@@ -68,7 +71,9 @@ const Text = styled.Text`
   color: #000000;
 `;
 
-export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, setAddMode, userScore, cancel, changeHelpMode} ) => {
+const AnimatedLeaf = Animated.createAnimatedComponent(TextImage);
+
+export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, setAddMode, userScore, cancel, changeHelpMode, changeAchiveMode} ) => {
 
     const [parentHeight, setParentHeight] = useState(0); //하단 uibox 높이
 
@@ -77,11 +82,34 @@ export const UiComponents = ( {windowWidth, addMode, storeData, setAddPossible, 
         setParentHeight(height);
       };
 
+    const leafAnimationValue = (new Animated.Value(1));
+
+    const withSpirng_end = () => {
+      Animated.timing(leafAnimationValue,{ 
+          toValue: 1.5,
+          duration : 150,
+          speed : 100,
+          bounciness : 0,
+          useNativeDriver : true,
+      }).start(() => {
+          Animated.timing(leafAnimationValue,{ 
+          toValue: 1,
+          duration : 150,
+          speed : 100,
+          bounciness : 0,
+          useNativeDriver : true,
+      }).start()});
+    }
+
+    useEffect(() => {
+      withSpirng_end();
+    }, [userScore]);
+
     return (
         <UIBOX onLayout = {onLayout}>
-            <ScoreBoard windowWidth = {windowWidth - 110 - (parentHeight-40)/2}>
+            <ScoreBoard onPressOut = {() => changeAchiveMode()} windowWidth = {windowWidth - 110 - (parentHeight-40)/2}>
               <LeafBox>
-                <TextImage source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.55*parentHeight} margin = {0}/>
+                <AnimatedLeaf style = {{transform: [{scale : leafAnimationValue}]}} source = {images.leafs} resizeMode = 'contain' onPressOut = {()=> {}} parentHeight = {0.55*parentHeight} margin = {0}/>
               </LeafBox>
             <Text>{userScore}  </Text>
             </ScoreBoard>

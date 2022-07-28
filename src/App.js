@@ -1,5 +1,5 @@
-import React, {useEffect, useLayoutEffect, useState} from 'react';
-import { Image, StatusBar, Dimensions, Alert, ToastAndroid } from 'react-native';
+import React, { useRef, useEffect, useState} from 'react';
+import { Animated, StatusBar, Dimensions, Alert, ToastAndroid } from 'react-native';
 import { theme } from './theme';
 import MapView from 'react-native-maps';
 import { Callout, Marker } from 'react-native-maps';
@@ -10,13 +10,14 @@ import 'react-native-gesture-handler';
 import { images } from './component/Image';
 import { getDatabase, ref, onValue, set, update } from 'firebase/database';
 import { initializeApp } from "firebase/app";
-import { Icon } from './component/Imagebutton';
 import { LogBox } from 'react-native';
 import { CusCallout } from './component/CustomCallout';
 import { getDistance} from 'geolib';
 import { TrashButton } from './component/TrashButton';
 import { UiComponents } from './component/UiComponents';
 import { TrashTimer, useInterval } from './component/TrashTimer';
+import { DailyQuestCells } from './component/Achievement';
+import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
 
@@ -51,6 +52,15 @@ const windowHeight = Dimensions.get('window').height;
 export default function App() {
 
     const [helpMode, setHelpMode] = useState(false); //도움말
+    const [achiveMode, setAchiveMode] = useState(false); //도전과제
+
+    const [todaysFirstAcess, setFirstAcess] = useState(false); //오늘의 첫 접속인지 
+    const [achiveList, setAchiveList] = useState({quest1:{achived : null}, quest2:{achived : null}, quest3:{achived : null}})
+
+    const [userDailyAccessTime, setDailyAccessTime] = useState(0); //유저 하루 접속 횟수
+    const [userDailyThrowTime, setDailyThrowTime] = useState(0); //유저 하루 쓰레기 버린 횟수
+    const [userDailyAddTime, setDailyAddTime] = useState(0); //유저 하루 쓰레기통 추가 횟수
+
     const [userTimer, setTimer] = useState(0);
     
     const [userScore, setScore] = useState(30); //유저 score 초기값
@@ -61,6 +71,7 @@ export default function App() {
     const [locas, setLocations] = useState({}) //화면에 출력해줄 모든 마커들의 정보 
     const [currentLoc, setCurrentLoc] = useState(null); //현재 사용자 위치
     const [currentMarker, setCurrentMarker] = useState(null); //선택한 마커의 정보
+
     const [addPossible, setAddPossible] = useState(true); // add 가능한지?
     const [addMode, setAddMode] = useState(false); //add 모드인지?
     const [throwMode, setThrowMode] = useState(true); // 로대시로 쿨타임 조정
@@ -69,6 +80,7 @@ export default function App() {
 
     useEffect(() =>{
       _getUserID();
+      getFont();
     }, []);
 
     const preload = async() => {
@@ -81,6 +93,12 @@ export default function App() {
             console.log("오류발생,,");
             Alert.alert("위치정보를 가져올수 없습니다..");
         }
+    };
+
+    const getFont = async () => {
+      await Font.loadAsync({
+        'nanumSq' : require("./assets/fonts/NanumSquareRoundR.ttf"),
+      });
     };
 
     const showToastWithGravity = (msg) => {
@@ -117,10 +135,16 @@ export default function App() {
       }
     }
 
-    useEffect(() => {
+    useEffect(async () => {
+      if(userID != 'default'){
       console.log("유저 ID : " + userID);
       loadUserData();
-      // TimerSetting();
+      TimerSetting();
+      verifyDailyFirstAccess();
+      loadUserAchiveState();
+      await updateUserDailyStatus("dailyAccess", true);
+      await updateUserDailyStatus("dailyThrow", false);
+      }
     }, [userID]); //userID 동기 처리
 
 // timerTime 받아와서 저장하기
@@ -142,6 +166,7 @@ export default function App() {
         score: userScore,
         timerTime : 0,
         loginTime : today.getTime(),
+        lastAcessDate : today.getFullYear().toString() + today.getMonth().toString() + today.getDate().toString(), 
       });
     }
 
@@ -155,8 +180,51 @@ export default function App() {
           setScore(temp);
         }
       });
-
     }
+// 유저 오늘 첫 접속인지 확인
+    const verifyDailyFirstAccess = () => {
+      const reference = ref(db, 'users/' + userID);
+      let today = new Date();
+      let promise = new Promise(function(resolve, reject) {
+        onValue(reference, (snapshot) => {
+          if(snapshot.val() != null){
+            tempDate = snapshot.val().lastAcessDate;
+            console.log("onValue 함수 내에서 접속일 조회 : " + tempDate);
+            resolve(tempDate);
+          }
+      }, {
+        onlyOnce : true
+      });});
+      
+      let tempDate;
+
+      promise.then(
+        result => {
+          console.log("가장 최근 접속일 : " + result);
+          tempDate = result.toString();
+          let todayDate = today.getFullYear().toString() + today.getMonth().toString() + today.getDate().toString();
+          console.log("오늘 날짜 : " + todayDate);
+          if(todayDate != tempDate){
+            console.log("오늘의 첫 접속입니다");
+            showToastWithGravity("환영합니다!");
+
+            update(ref(db, 'users/' + userID), {
+              lastAcessDate : todayDate,
+            })
+            setFirstAcess(true);
+          }
+        }
+       );
+    }
+
+    useEffect(() => {
+      console.log("첫 접속? " + todaysFirstAcess);
+      if(todaysFirstAcess == true){
+        console.log("퀘스트 초기화");
+        resetUserAchiveState();
+        resetUserDailyStatus();
+      }
+    }, [todaysFirstAcess]); //첫 접속시 퀘스트 상태 초기화
 
 // user 타이머 설정 firebase 에서 참조
     const TimerSetting = () => {
@@ -184,7 +252,7 @@ export default function App() {
               setThrowMode(false);
               setTimeout(() => {
                 setThrowMode(true);
-              },(300-correctionValue)*1000); //쿨타임 
+              },(301-correctionValue)*1000); //쿨타임 
             }
           }
         }, {
@@ -198,6 +266,10 @@ export default function App() {
       console.log(userTimer);
     }, [userTimer]);
 
+    useEffect(() => {
+      console.log(throwMode);
+    }, [throwMode]);
+
 // user score 업데이트
     const updateUserData = (_userID, v) => { 
       console.log("updateUserData 함수 시작");
@@ -208,9 +280,11 @@ export default function App() {
       
       let promise = new Promise(function(resolve, reject) {
         onValue(reference, (snapshot) => {
-        tempScore = snapshot.val().score;
-        console.log("onValue 함수 내에서 스코어 조회 : " + tempScore);
-        resolve(tempScore);
+          if(snapshot.val() != null){
+            tempScore = snapshot.val().score;
+            console.log("onValue 함수 내에서 스코어 조회 : " + tempScore);
+            resolve(tempScore);
+          }
       }, {
         onlyOnce : true
       });});
@@ -236,6 +310,103 @@ export default function App() {
         }
        );
       
+    }
+// 유저 퀘스트 달성도 저장
+    const updateUserAchiveState = (quest_input) => {
+      update(ref(db, '/users/' + userID + '/achiveState/' + quest_input), {
+        achived : true,
+      })
+    }
+
+    const resetUserAchiveState = () => {
+      update(ref(db, '/users/' + userID + '/achiveState/quest1'), {
+        achived : false,
+      })
+      update(ref(db, '/users/' + userID + '/achiveState/quest2'), {
+        achived : false,
+      })
+      update(ref(db, '/users/' + userID + '/achiveState/quest3'), {
+        achived : false,
+      })
+    }
+
+    const loadUserAchiveState = () => {
+      onValue(ref(db, '/users/' + userID + '/achiveState'), (snapshot) => {
+        if(snapshot.val() != null){
+          setAchiveList({
+            quest1 : { achived : snapshot.val().quest1.achived},
+            quest2 : { achived : snapshot.val().quest2.achived},
+            quest3 : { achived : snapshot.val().quest3.achived},
+          })
+        }
+      }, {
+        onlyOnce : true
+      });
+    };
+
+    useEffect(() => {
+      console.log("유저 성취 상황 : " + achiveList);
+    }, [achiveList]);
+
+// 유저 일일 로그 저장 & 로드
+    const updateUserDailyStatus = async (status_name, v) => {
+      let promise = new Promise(function(resolve, reject) {
+        onValue(ref(db, '/users/' + userID + '/dailyStatus/' + status_name), (snapshot) => {
+          if(snapshot.val() != null){
+            tempTime = snapshot.val();
+            console.log("onV 내부 :" + tempTime);
+            resolve(tempTime);
+          }
+          else{
+            resolve(0);
+          }
+      }, {
+        onlyOnce : true
+      });});
+      
+      let tempTime;
+
+      promise.then(
+        result => {
+          console.log("updateUserDailyStatus 함수에서" + status_name + "의 횟수 조회 : " + result);
+          tempTime = result;
+          if(tempTime != null){
+            console.log(tempTime);
+            if(v == false){
+              tempTime = Number(tempTime);
+            }
+            else {
+              tempTime = Number(tempTime) + 1;
+            }
+
+            update(ref(db, '/users/' + userID + '/dailyStatus'), {
+              [status_name] : tempTime,
+            })
+          }
+
+          if(status_name == "dailyAccess"){
+            setDailyAccessTime(tempTime);
+          }
+          else if (status_name == "dailyThrow"){
+            setDailyThrowTime(tempTime);
+          }
+        }
+       );
+    }
+
+    useEffect(() => {
+      console.log("유저 일일 접속량" + userDailyAccessTime);
+    }, [userDailyAccessTime])
+
+    useEffect(() => {
+      console.log("유저 일일 쓰레기통 이용량" + userDailyThrowTime);
+    }, [userDailyThrowTime])
+
+    const resetUserDailyStatus = () => {
+      set(ref(db, '/users/' + userID + '/dailyStatus'), {
+        dailyAccess : 0,
+        dailyThrow : 0,
+      })
     }
 
 // 맵 데이터 저장 & 로드
@@ -303,39 +474,39 @@ export default function App() {
     }; // 맵 데이터 삭제
 
 // weight 업데이트 함수
-      const updateData = async (id, v) => { 
-        let tempWeight = null;
-        let creatorName = null;
-        
-        const reference = ref(db, 'locations/' + id);
-        onValue(reference, (snapshot) => {
-          if(snapshot.val() != null){
-          tempWeight = snapshot.val().weight;
-          creatorName = snapshot.val().creator;
-          }
-        },
-        {
-          onlyOnce : true
-        });
-        console.log("dislike 버튼의 가중치 값 : " + tempWeight);
-        
-        if(tempWeight != null){
-
-          tempWeight = Number(tempWeight) + v;
-          if(tempWeight < 0){
-            delData(id);
-          }
-          else {
-            update(ref(db, '/locations/' + id), {
-              weight : tempWeight,
-            })
-          }
+    const updateData = async (id, v) => { 
+      let tempWeight = null;
+      let creatorName = null;
+      
+      const reference = ref(db, 'locations/' + id);
+      onValue(reference, (snapshot) => {
+        if(snapshot.val() != null){
+        tempWeight = snapshot.val().weight;
+        creatorName = snapshot.val().creator;
         }
-        console.log("creator : " + creatorName);
-        if(creatorName != null && v > 0 && creatorName != userID){
-          updateUserData(creatorName, 1); //바로 적용이 안됨. 한번씩 씹힘..
+      },
+      {
+        onlyOnce : true
+      });
+      console.log("dislike 버튼의 가중치 값 : " + tempWeight);
+      
+      if(tempWeight != null){
+
+        tempWeight = Number(tempWeight) + v;
+        if(tempWeight < 0){
+          delData(id);
+        }
+        else {
+          update(ref(db, '/locations/' + id), {
+            weight : tempWeight,
+          })
         }
       }
+      console.log("creator : " + creatorName);
+      if(creatorName != null && v > 0 && creatorName != userID){
+        updateUserData(creatorName, 1);
+      }
+    }
 
   // 쓰레기 버리기 함수
       const throwTrash = async () => {
@@ -344,14 +515,17 @@ export default function App() {
         throwReset();
         updateUserData(userID, 5);
         loadData();
-        async function setTime() {setTimer(300);}
-        await setTime();
+        setTimer(300);
+
         setThrowMode(false);
+
+        
         setTimeout(() => {
           setThrowMode(true);
-        },300*1000); //쿨타임 
+        },301*1000); //쿨타임 
         storeUserTimerData(userID);
         showToastWithGravity("쓰레기통 이용 성공!");
+        updateUserDailyStatus("dailyThrow");
       }
 
       useEffect(() => {
@@ -378,7 +552,9 @@ export default function App() {
       const dislike = () => {
         if(currentMarker){
           updateData(currentMarker, -2);
+          showToastWithGravity("비추천 성공");
         }
+        loadData;
       }
 
   // 쓰레기통들과의 거리측정 함수
@@ -398,33 +574,104 @@ export default function App() {
         }
       }
 
+     
+      useEffect(loadData, []);
+
+// 도움말 설정
+
       const changeHelpMode = () => {
         return setHelpMode((ex) => !ex);
       }
 
-      useEffect(loadData, []);
-
       const HelpBox = styled.Image`
         width : ${props => props.windowWidth}px;
-        height : ${props => props.windowWidth*(16/11)}px;
+        height : ${props => props.windowWidth*(16/10)}px;
         z-index : 100;
         background-color: #ffffff;
-        border-radius : 20px;
+        border-top-left-radius : 30px;
+        border-top-right-radius : 30px;
         position : absolute;
-        opacity : 0.75;
-        
+        opacity : 0.8;
+        border-width : 0.5px;
+        border-color : black;
       `
+      const AnimatedHelpBox = Animated.createAnimatedComponent(HelpBox);
+
+      const helpValue = useRef(new Animated.Value(-1000)).current;
+
+      useEffect(() => {
+        console.log("도움말 : " + helpMode);
+        getUP();
+      }, [helpMode])
+
+      const getUP = () => {
+        Animated.timing(helpValue, {
+          toValue: helpMode? windowHeight*0.08:windowHeight,
+          duration : 300,
+          useNativeDriver: true,
+        }).start(()=>{
+          changeHelpMode;
+        });
+      };
+
+// 도전과제창 설정
+      const changeAchiveMode = () => {
+        return setAchiveMode((ex) => !ex);
+      }
+
+      const AchiveBox = styled.View`
+          flex : 1;
+          width : ${props => props.windowWidth}px;
+          height : ${props => props.windowWidth*(16/10)}px;
+          z-index : 100;
+          align-items : center;
+          background-color: #99ffcc;
+          border-top-left-radius : 30px;
+          border-top-right-radius : 30px;
+          position : absolute;
+          opacity : 1;
+          border-width : 0.5px;
+          border-color : black;
+      `
+      const AnimatedAchiveBox = Animated.createAnimatedComponent(AchiveBox);
+
+      const achiveAnimationValue = useRef(new Animated.Value(-1000)).current;
+
+      const AchiveGetUP = () => {
+      Animated.timing(achiveAnimationValue, {
+          toValue: achiveMode? windowHeight*0.08:windowHeight,
+          duration : 300,
+          useNativeDriver: true,
+      }).start(()=>{
+          changeHelpMode;
+      });
+      };
+      const QuestText = styled.Text`
+      font-size : 30px;
+      color : white;
+      `;
+
+      useEffect(() => {
+        console.log("도전과제 : " + achiveMode);
+        AchiveGetUP();
+      }, [achiveMode]);
 
   return isReady?(
     <ThemeProvider theme = {theme}>
+      <Animated.View style = {{flex : 1}}>
       <Container>
       <StatusBar
       barStyle='dark-content'
       backgroundColor={theme.background}/>
+{/* 도전과제 */}
+      <AnimatedAchiveBox style= {{transform : [{translateY : achiveAnimationValue}]}}  windowWidth = {windowWidth} >
+        <DailyQuestCells userAchiveList = {achiveList} achiveMatter1 = {userDailyAccessTime} achiveMatter2 = {userDailyThrowTime} achiveMatter3 = {userScore} 
+        updateUserAchiveState = {updateUserAchiveState} loadUserAchiveState = {loadUserAchiveState} showToastWithGravity = {showToastWithGravity} updateUserScore = {updateUserData} userID = {userID}/>
+      </AnimatedAchiveBox>
 
 {/* 도움말 */}
-      {helpMode&& <HelpBox source = {images.helpPage} windowWidth = {windowWidth*0.95} onPress = {() => changeHelpMode()}>
-        </HelpBox>}
+      <AnimatedHelpBox style= {{transform : [{translateY : helpValue}]}} source = {images.helpPage} windowWidth = {windowWidth}>
+      </AnimatedHelpBox>
 {/* 버리기 쿨타임 */}
       {!throwMode&&<TrashTimer _time = {userTimer}/>}
 {/* 버리기 버튼 출력 */}
@@ -493,7 +740,9 @@ export default function App() {
       </Container>
 
 {/* 하단부 UI단 */}
-      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddPossible = {setAddPossible} setAddMode = {setAddMode} userScore = {userScore} cancel = {cancel} changeHelpMode = {changeHelpMode}/>
+      <UiComponents windowWidth={windowWidth} addMode = {addMode} storeData = {storeData} setAddPossible = {setAddPossible} setAddMode = {setAddMode} userScore = {userScore} 
+      cancel = {cancel} changeHelpMode = {changeHelpMode} changeAchiveMode = {changeAchiveMode}/>
+      </Animated.View>
     </ThemeProvider>
 
   ) : (
